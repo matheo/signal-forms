@@ -1,0 +1,14 @@
+article,
+header {
+  border-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large));
+}
+
+article {
+  border: 1px solid rgba(0, 0, 0, 15%);
+}
+
+header {
+  background: rgba(0, 0, 0, 15%);
+  // border-end-start-radius: 0;
+  // border-end-end-radius: 0;
+}

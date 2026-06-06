@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, model } from '@angular/core';
+import { ConditionExpression } from '../../models';
 
 @Component({
   selector: 'app-qb-condition',
@@ -6,4 +7,6 @@ import { Component } from '@angular/core';
   styleUrl: './qb-condition.scss',
   imports: [],
 })
-export class QbCondition {}
+export class QbCondition {
+  readonly model = model.required<ConditionExpression>();
+}
