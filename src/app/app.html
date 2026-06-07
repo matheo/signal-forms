@@ -4,6 +4,10 @@
   </mat-card-header>
 
   <mat-card-content class="!pb-1">
-    <app-qb-expression [model]="model()" />
+    <app-query-builder [expressions]="model()" />
   </mat-card-content>
+
+  <mat-card-footer>
+    <pre>{{ model() | json }}</pre>
+  </mat-card-footer>
 </mat-card>

@@ -1,12 +1,13 @@
+import { JsonPipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { LogicalExpression, LogicalOperator, QbExpression } from './query-builder';
+import { LogicalExpression, LogicalOperator, QueryBuilder } from './query-builder';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [MatCardModule, QbExpression],
+  imports: [JsonPipe, MatCardModule, QueryBuilder],
 })
 export class App {
   readonly model = signal<LogicalExpression>({
@@ -30,5 +31,5 @@ export class App {
         ]
       }
     ]
-  })
+  });
 }
