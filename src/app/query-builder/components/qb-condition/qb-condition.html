@@ -1,20 +1,27 @@
-<article class="flex flex-row gap-3 leading-[32px] px-5 py-3 mb-4">
-  <div>
-    <mat-form-field>
-      <mat-label>Field</mat-label>
-      <input
-        [formField]="form().field_name"
-        matInput
-        type="text"
-      />
-    </mat-form-field>
+<article class="flex flex-row gap-3 leading-[32px] px-4 py-3">
+  <mat-form-field class="flex-1">
+    <mat-label>Field</mat-label>
+    <input
+      [formField]="form().field_name"
+      matInput
+      type="text"
+    />
+  </mat-form-field>
+
+  <div class="flex-1 flex flex-col justify-center leading-4">
+    <small>Operator:</small>
+    <span>{{ form().operator().value() }}</span>
   </div>
 
-  <div>
-    Operator: {{ form().operator().value() }}
+  <div class="flex-1 flex flex-col justify-center leading-4">
+    <small>Value:</small>
+    <span>{{ form().value().value() }}</span>
   </div>
 
-  <div>
-    Value
+  <!-- TODO hide if cannot delete -->
+  <div class="flex-0 flex items-center">
+    <button mat-icon-button (click)="doDelete.emit([])">
+      <mat-icon>delete</mat-icon>
+    </button>
   </div>
 </article>

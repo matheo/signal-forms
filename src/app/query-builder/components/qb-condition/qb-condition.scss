@@ -1,4 +1,11 @@
-article {
-  border: 1px solid rgba(0, 0, 0, 15%);
-  border-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large));
+:host::ng-deep {
+  .mdc-text-field--filled {
+    border-top-left-radius: calc(var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large)) / 2);
+    border-bottom-left-radius: calc(var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large)) / 2);
+  }
+
+  .mdc-line-ripple,
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
 }
