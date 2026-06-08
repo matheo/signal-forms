@@ -9,10 +9,10 @@
       </button>
 
       <mat-menu #addChild="matMenu">
-        <button mat-menu-item (click)="addExpression.emit()">
+        <button mat-menu-item (click)="addExpression.emit([index()])">
           <mat-icon>rule_folder</mat-icon><span>Add Expression</span>
         </button>
-        <button mat-menu-item (click)="addCondition.emit()">
+        <button mat-menu-item (click)="addCondition.emit([index()])">
           <mat-icon>rule</mat-icon><span>Add Condition</span>
         </button>
       </mat-menu>
@@ -24,14 +24,14 @@
     </div>
 
     <!-- delete expression -->
-    <button mat-icon-button (click)="doDelete.emit()">
+    <button mat-icon-button (click)="doDelete.emit([index()])">
       <mat-icon>delete</mat-icon>
     </button>
   </header>
 
   <div class="expressions-items flex flex-col justify-stretch ml-4 mr-2">
-    @for (item of form().expressions; track $index; let index = $index) {
-      @if (index === 1) {
+    @for (field of form().expressions; track field; let i = $index) {
+      @if (i === 1) {
         <!-- operator -->
         <mat-button-toggle-group class="flex justify-stretch w-full" [formField]="form().operator" [hideSingleSelectionIndicator]="true">
           <mat-button-toggle value="and" class="flex-1 pl-1">AND</mat-button-toggle>
@@ -39,11 +39,21 @@
         </mat-button-toggle-group>
       }
 
-      @let expression = form().expressions[index];
+      @let expression = form().expressions[i];
       @if (isCondition(expression)) {
-        <app-qb-condition [form]="expression" />
+        <app-qb-condition
+          [index]="i"
+          [form]="expression"
+          (doDelete)="doDelete.emit([index(), ...$event])"
+        />
       } @else if (isLogical(expression)) {
-        <app-qb-expression [form]="expression" />
+        <app-qb-expression
+          [index]="i"
+          [form]="expression"
+          (addExpression)="addExpression.emit([index(), ...$event])"
+          (addCondition)="addCondition.emit([index(), ...$event])"
+          (doDelete)="doDelete.emit([index(), ...$event])"
+        />
       }
     }
   </div>

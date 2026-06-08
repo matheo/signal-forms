@@ -6,6 +6,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { FormField, MaybeFieldTree } from '@angular/forms/signals';
 import { ConditionExpression, Expression, LogicalExpression } from '../../models';
+import { isCondition, isLogical } from '../../utils';
 import { QbCondition } from '../qb-condition/qb-condition';
 
 @Component({
@@ -27,21 +28,22 @@ import { QbCondition } from '../qb-condition/qb-condition';
   ],
 })
 export class QbExpression {
+  readonly index = input.required<number>();
   readonly form = input.required<
     MaybeFieldTree<LogicalExpression, string | number>
   >();
 
-  readonly addExpression = output<void>();
-  readonly addCondition = output<void>();
-  readonly doDelete = output<void>();
+  readonly addExpression = output<number[]>();
+  readonly addCondition = output<number[]>();
+  readonly doDelete = output<number[]>();
 
   isCondition(expression: MaybeFieldTree<Expression, number>): expression is MaybeFieldTree<ConditionExpression, number> {
     const value = expression().value();
-    return value && 'field_name' in value;
+    return isCondition(value);
   }
 
   isLogical(expression: MaybeFieldTree<Expression, number>): expression is MaybeFieldTree<LogicalExpression, number> {
     const value = expression().value();
-    return value && 'expressions' in value;
+    return isLogical(value);
   }
 }

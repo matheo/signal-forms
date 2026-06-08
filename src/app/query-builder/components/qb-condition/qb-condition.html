@@ -10,17 +10,17 @@
 
   <div class="flex-1 flex flex-col justify-center leading-4">
     <small>Operator:</small>
-    <span>{{ form().operator().value() }}</span>
+    <span>{{ form().operator().value() | json }}</span>
   </div>
 
   <div class="flex-1 flex flex-col justify-center leading-4">
     <small>Value:</small>
-    <span>{{ form().value().value() }}</span>
+    <span>{{ form().value().value() | json }}</span>
   </div>
 
   <!-- TODO hide if cannot delete -->
   <div class="flex-0 flex items-center">
-    <button mat-icon-button (click)="doDelete.emit([])">
+    <button mat-icon-button (click)="doDelete.emit([index()])">
       <mat-icon>delete</mat-icon>
     </button>
   </div>

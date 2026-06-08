@@ -1,3 +1,4 @@
+import { JsonPipe } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { FormField, MaybeFieldTree } from '@angular/forms/signals';
 import { MatIconButton } from '@angular/material/button';
@@ -11,6 +12,7 @@ import { ConditionExpression } from '../../models';
   templateUrl: './qb-condition.html',
   styleUrl: './qb-condition.scss',
   imports: [
+    JsonPipe,
     FormField,
     MatFormFieldModule,
     MatIcon,
@@ -19,9 +21,10 @@ import { ConditionExpression } from '../../models';
   ],
 })
 export class QbCondition {
+  readonly index = input.required<number>();
   readonly form = input.required<
     MaybeFieldTree<ConditionExpression, number>
   >();
 
-  readonly doDelete = output<void>();
+  readonly doDelete = output<number[]>();
 }

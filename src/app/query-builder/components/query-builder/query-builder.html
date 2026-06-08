@@ -1,1 +1,7 @@
-<app-qb-expression [form]="form" />
+<app-qb-expression
+  [index]="-1"
+  [form]="form"
+  (addExpression)="addExpression($event)"
+  (addCondition)="addCondition($event)"
+  (doDelete)="doDelete($event)"
+/>
