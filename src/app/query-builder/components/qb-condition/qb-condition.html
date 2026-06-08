@@ -1,10 +1,17 @@
 <article class="flex flex-row gap-3 leading-[32px] px-5 py-3 mb-4">
   <div>
-    Field
+    <mat-form-field>
+      <mat-label>Field</mat-label>
+      <input
+        [formField]="form().field_name"
+        matInput
+        type="text"
+      />
+    </mat-form-field>
   </div>
 
   <div>
-    Operator: {{ model().operator }}
+    Operator: {{ form().operator().value() }}
   </div>
 
   <div>

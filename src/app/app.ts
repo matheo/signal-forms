@@ -12,7 +12,7 @@ import { LogicalExpression, LogicalOperator, QueryBuilder } from './query-builde
 export class App {
   readonly model = signal<LogicalExpression>({
     not: false,
-    operator: LogicalOperator.AND,
+    operator: LogicalOperator.OR,
     expressions: [
       {
         field_name: 'Field1',

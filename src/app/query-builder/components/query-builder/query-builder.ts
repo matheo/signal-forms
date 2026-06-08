@@ -1,6 +1,6 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, model } from '@angular/core';
+import { MaybeFieldTree, form } from '@angular/forms/signals';
 import { LogicalExpression } from '../../models';
-import { ExpressionsStore } from '../../state';
 import { QbExpression } from '../qb-expression/qb-expression';
 
 @Component({
@@ -8,17 +8,9 @@ import { QbExpression } from '../qb-expression/qb-expression';
   templateUrl: './query-builder.html',
   styleUrl: './query-builder.scss',
   imports: [QbExpression],
-  providers: [ExpressionsStore],
 })
 export class QueryBuilder {
-  readonly #store = inject(ExpressionsStore);
+  readonly model = model.required<LogicalExpression>();
 
-  readonly expressions = input.required<LogicalExpression, LogicalExpression>({
-    transform: (value) => {
-      this.#store.init(value);
-      return value;
-    },
-  });
-
-  readonly model = this.#store.model;
+  readonly form: MaybeFieldTree<LogicalExpression, string | number> = form(this.model);
 }

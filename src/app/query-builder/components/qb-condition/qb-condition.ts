@@ -1,12 +1,17 @@
-import { Component, model } from '@angular/core';
-import { ConditionExpression } from '../../models';
+import { Component, input } from '@angular/core';
+import { FormField, MaybeFieldTree } from '@angular/forms/signals';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { ConditionExpression, Expression } from '../../models';
 
 @Component({
   selector: 'app-qb-condition',
   templateUrl: './qb-condition.html',
   styleUrl: './qb-condition.scss',
-  imports: [],
+  imports: [FormField, MatFormFieldModule, MatInput],
 })
 export class QbCondition {
-  readonly model = model.required<ConditionExpression>();
+  readonly form = input.required<
+    MaybeFieldTree<ConditionExpression, number>
+  >();
 }

@@ -1,10 +1,10 @@
 <article class="flex flex-col gap-3 mb-4">
   <header class="flex flex-row justify-between p-1 gap-3">
     <!-- operator -->
-    <mat-button-toggle-group [hideSingleSelectionIndicator]="true">
-      <mat-button-toggle class="pl-1">NOT</mat-button-toggle>
-      <mat-button-toggle>AND</mat-button-toggle>
-      <mat-button-toggle class="pr-1">OR</mat-button-toggle>
+    <mat-button-toggle-group [formField]="form().operator" [hideSingleSelectionIndicator]="true">
+      <mat-button-toggle value="not" class="pl-1">NOT</mat-button-toggle>
+      <mat-button-toggle value="and">AND</mat-button-toggle>
+      <mat-button-toggle value="or" class="pr-1">OR</mat-button-toggle>
     </mat-button-toggle-group>
 
     <!-- delete expression -->
@@ -12,11 +12,12 @@
   </header>
 
   <div class="flex flex-col flex-stretch ml-4 mr-2">
-    @for (expression of model().expressions; track $index) {
+    @for (item of form().expressions; track $index; let index = $index) {
+      @let expression = form().expressions[index];
       @if (isCondition(expression)) {
-        <app-qb-condition [model]="expression" />
+        <app-qb-condition [form]="expression" />
       } @else if (isLogical(expression)) {
-        <app-qb-expression [model]="expression" />
+        <app-qb-expression [form]="expression" />
       }
     }
   </div>
