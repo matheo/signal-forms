@@ -1,6 +1,6 @@
-import { Component, model } from '@angular/core';
+import { Component, input, model } from '@angular/core';
 import { MaybeFieldTree, form } from '@angular/forms/signals';
-import { LogicalExpression } from '../../models';
+import { FilterDefinition, LogicalExpression } from '../../models';
 import { newCondition, newExpression } from '../../utils';
 import { QbExpression } from '../qb-expression/qb-expression';
 
@@ -11,6 +11,7 @@ import { QbExpression } from '../qb-expression/qb-expression';
   imports: [QbExpression],
 })
 export class QueryBuilder {
+  readonly filters = input.required<FilterDefinition[]>();
   readonly model = model.required<LogicalExpression>();
 
   readonly form: MaybeFieldTree<LogicalExpression, string | number> = form(this.model);

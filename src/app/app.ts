@@ -1,7 +1,8 @@
 import { JsonPipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { LogicalExpression, LogicalOperator, QueryBuilder } from './query-builder';
+import { FilterDefinition, LogicalExpression, LogicalOperator, QueryBuilder } from './query-builder';
+import { filters } from './app.data';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,8 @@ import { LogicalExpression, LogicalOperator, QueryBuilder } from './query-builde
   imports: [JsonPipe, MatCardModule, QueryBuilder],
 })
 export class App {
+  readonly filters = signal<FilterDefinition[]>(filters);
+
   readonly model = signal<LogicalExpression>({
     not: false,
     operator: LogicalOperator.OR,
