@@ -2,13 +2,14 @@ import { JsonPipe } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { FilterDefinition, LogicalExpression, LogicalOperator, QueryBuilder } from './query-builder';
+import { QueryFilters } from './query-filters';
 import { filters } from './app.data';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [JsonPipe, MatCardModule, QueryBuilder],
+  imports: [JsonPipe, MatCardModule, QueryBuilder, QueryFilters],
 })
 export class App {
   readonly filters = signal<FilterDefinition[]>(filters);
@@ -30,6 +31,15 @@ export class App {
             field_name: 'Field2',
             operator: 'notEqual',
             value: 'Value2'
+          },
+          {
+            field_name: 'COALESCE',
+            operator: 'equal',
+            value: {
+              field_name: 'serial_number',
+              field_default: 'sn',
+              value: 'unknown',
+            },
           },
         ]
       }

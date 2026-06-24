@@ -1,0 +1,40 @@
+<div class="qf-coalesce flex flex-col gap-2 p-3">
+  <header class="flex items-center gap-2">
+    <span class="font-mono font-medium text-purple-700">COALESCE</span>
+    <small class="text-gray-500">Returns the first non-null field, compared to a value.</small>
+  </header>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Field 1</mat-label>
+    <input matInput [formField]="form.field1" [matAutocomplete]="ac1" placeholder="column1" />
+    <mat-autocomplete #ac1="matAutocomplete">
+      @for (option of field1Options(); track option.field) {
+        <mat-option [value]="option.field">
+          {{ option.label }} <small class="text-gray-400 font-mono">{{ option.field }}</small>
+        </mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Field 2</mat-label>
+    <input matInput [formField]="form.field2" [matAutocomplete]="ac2" placeholder="column2" />
+    <mat-autocomplete #ac2="matAutocomplete">
+      @for (option of field2Options(); track option.field) {
+        <mat-option [value]="option.field">
+          {{ option.label }} <small class="text-gray-400 font-mono">{{ option.field }}</small>
+        </mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Value</mat-label>
+    <input matInput [formField]="form.compareTo" placeholder="value" />
+  </mat-form-field>
+
+  <footer class="flex justify-end gap-2">
+    <button matButton (click)="cancel.emit()">Cancel</button>
+    <button matButton="filled" (click)="commit()">Apply</button>
+  </footer>
+</div>

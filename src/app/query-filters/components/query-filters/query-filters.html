@@ -1,0 +1,34 @@
+<div class="qf-shell" cdkOverlayOrigin #origin="cdkOverlayOrigin">
+  <app-qf-chip-bar
+    [stream]="chipStream()"
+    [selectedKey]="selectedKey()"
+    [activeCaret]="activeCaret()"
+    (chipActivate)="onChipActivate($event)"
+    (caretActivate)="onCaretActivate($event)"
+  />
+</div>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayHasBackdrop]="false"
+  (overlayOutsideClick)="closeEditing()"
+  (detach)="closeEditing()"
+>
+  <div class="qf-popup mat-elevation-z6">
+    <app-qf-edit-popup
+      [mode]="editMode()"
+      [filters]="filters()"
+      [contextFilter]="contextFilter()"
+      [initialValue]="initialValue()"
+      [initialCoalesce]="initialCoalesce()"
+      (pickField)="onPickField($event)"
+      (pickOperator)="onPickOperator($event)"
+      (commitValue)="onCommitValue($event)"
+      (commitCoalesce)="onCommitCoalesce($event)"
+      (cancel)="closeEditing()"
+    />
+  </div>
+</ng-template>

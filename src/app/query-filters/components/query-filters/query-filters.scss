@@ -1,0 +1,17 @@
+.qf-shell {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface, #fff);
+
+  &:focus-within {
+    border-color: var(--mat-sys-primary, #7c3aed);
+  }
+}
+
+.qf-popup {
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface, #fff);
+  overflow: hidden;
+}

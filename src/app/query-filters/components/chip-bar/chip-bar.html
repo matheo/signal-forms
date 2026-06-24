@@ -1,0 +1,23 @@
+<div class="qf-bar flex flex-wrap items-center gap-1">
+  @for (item of items(); track item.key) {
+    @if (item.kind === 'chip') {
+      <app-qf-chip
+        [chip]="item.chip"
+        [selected]="item.chip.key === selectedKey()"
+        (activate)="chipActivate.emit(item.chip)"
+      />
+    } @else {
+      <button
+        type="button"
+        class="qf-caret"
+        [class.qf-caret--active]="isActiveCaret(item.caret)"
+        aria-label="Insert here"
+        (click)="caretActivate.emit(item.caret)"
+      ></button>
+    }
+  }
+
+  @if (!stream().chips.length) {
+    <span class="qf-placeholder text-gray-400">Click to add a filter…</span>
+  }
+</div>

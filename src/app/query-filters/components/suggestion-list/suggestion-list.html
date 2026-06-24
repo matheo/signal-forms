@@ -1,0 +1,33 @@
+<div class="qf-suggestions flex flex-col">
+  <input
+    #search
+    type="text"
+    class="qf-search"
+    cdkFocusInitial
+    autofocus
+    [placeholder]="placeholder()"
+    [value]="query()"
+    (input)="onInput(search.value)"
+    (keydown)="onKeydown($event)"
+  />
+
+  <ul class="qf-options" role="listbox">
+    @for (item of filtered(); track item.value; let i = $index) {
+      <li
+        role="option"
+        class="qf-option flex items-baseline justify-between gap-3"
+        [class.qf-option--active]="i === activeIndex()"
+        [attr.aria-selected]="i === activeIndex()"
+        (mouseenter)="activeIndex.set(i)"
+        (click)="select.emit(item.value)"
+      >
+        <span class="qf-option__label">{{ item.label }}</span>
+        @if (item.hint) {
+          <span class="qf-option__hint font-mono text-gray-400">{{ item.hint }}</span>
+        }
+      </li>
+    } @empty {
+      <li class="qf-option qf-option--empty text-gray-400">No matches</li>
+    }
+  </ul>
+</div>

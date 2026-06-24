@@ -1,0 +1,42 @@
+@switch (mode().kind) {
+  @case ('pick-field') {
+    <app-qf-suggestion-list
+      [items]="fieldSuggestions()"
+      placeholder="Search fields…"
+      (select)="pickField.emit($event)"
+      (cancel)="cancel.emit()"
+    />
+  }
+  @case ('pick-operator') {
+    <app-qf-suggestion-list
+      [items]="operatorSuggestions()"
+      placeholder="Search operators…"
+      (select)="pickOperator.emit($event)"
+      (cancel)="cancel.emit()"
+    />
+  }
+  @case ('edit-value') {
+    <div class="qf-value-edit flex items-center gap-2 p-3">
+      <input
+        #valueInput
+        type="text"
+        class="qf-value-input"
+        cdkFocusInitial
+        autofocus
+        placeholder="value"
+        [value]="valueText()"
+        (input)="valueText.set(valueInput.value)"
+        (keydown)="onValueKeydown($event)"
+      />
+      <button matButton="filled" (click)="commitValue.emit(valueText())">Apply</button>
+    </div>
+  }
+  @case ('edit-coalesce') {
+    <app-qf-coalesce-editor
+      [filters]="filters()"
+      [initial]="initialCoalesce()"
+      (commitArgs)="commitCoalesce.emit($event)"
+      (cancel)="cancel.emit()"
+    />
+  }
+}

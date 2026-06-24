@@ -1,0 +1,10 @@
+button {
+  cursor: pointer;
+  border: none;
+  font: inherit;
+  line-height: 1.25;
+
+  &:disabled {
+    cursor: default;
+  }
+}

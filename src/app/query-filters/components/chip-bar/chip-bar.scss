@@ -1,0 +1,38 @@
+.qf-bar {
+  min-height: 2.5rem;
+  cursor: text;
+}
+
+.qf-caret {
+  width: 3px;
+  align-self: stretch;
+  min-height: 1.25rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  cursor: text;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background: var(--mat-sys-primary, #7c3aed);
+    opacity: 0.4;
+  }
+
+  &--active {
+    background: var(--mat-sys-primary, #7c3aed);
+    opacity: 1;
+    animation: qf-blink 1s steps(2, start) infinite;
+  }
+}
+
+@keyframes qf-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.qf-placeholder {
+  font-style: italic;
+}

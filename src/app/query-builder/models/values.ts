@@ -17,6 +17,16 @@ export interface StructValue {
   value: ConditionValue;
 }
 
-export type ComplexType = ArrayValue | MapValue | StructValue;
+export interface FunctionValue {
+  field_name: string;
+}
+
+export interface CoalesceValue {
+  field_name: string;
+  field_default: string;
+  value: ConditionValue;
+}
+
+export type ComplexType = ArrayValue | MapValue | StructValue | FunctionValue | CoalesceValue;
 
 export type ConditionValue = string | boolean | number | Date | ComplexType;
