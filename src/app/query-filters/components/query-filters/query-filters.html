@@ -3,11 +3,12 @@
     [stream]="chipStream()"
     [selectedKey]="selectedKey()"
     [activeCaret]="activeCaret()"
+    [editingKey]="editingFieldKey()"
     [draft]="draft()"
     (chipActivate)="onChipActivate($event)"
     (caretActivate)="onCaretActivate($event)"
-    (caretInput)="onCaretInput($event)"
-    (caretKeydown)="onCaretKeydown($event)"
+    (inlineInput)="onInlineInput($event)"
+    (inlineKeydown)="onInlineKeydown($event)"
   />
 </div>
 
@@ -28,14 +29,13 @@
       [contextFilter]="contextFilter()"
       [initialValue]="initialValue()"
       [initialCoalesce]="initialCoalesce()"
-      [caretSuggestions]="caretSuggestions()"
-      [caretActiveIndex]="caretIndex()"
-      (pickField)="onPickField($event)"
+      [inlineSuggestions]="inlineSuggestions()"
+      [inlineActiveIndex]="inlineIndex()"
       (pickOperator)="onPickOperator($event)"
       (commitValue)="onCommitValue($event)"
       (commitCoalesce)="onCommitCoalesce($event)"
-      (caretSelect)="onCaretSelect($event)"
-      (caretActiveIndexChange)="caretIndex.set($event)"
+      (inlineSelect)="onInlineSelect($event)"
+      (inlineActiveIndexChange)="inlineIndex.set($event)"
       (cancel)="closeEditing()"
     />
   </div>

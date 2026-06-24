@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, computed, effect, input, output, viewChild } from '@angular/core';
 import { Caret, ChipStream, ChipVm } from '../../models';
 import { Chip } from '../chip/chip';
@@ -11,31 +12,32 @@ type BarItem =
   templateUrl: './chip-bar.html',
   styleUrl: './chip-bar.scss',
   host: { class: 'block' },
-  imports: [Chip],
+  imports: [Chip, NgTemplateOutlet],
 })
 export class ChipBar {
   readonly stream = input.required<ChipStream>();
   readonly selectedKey = input<string | null>(null);
   readonly activeCaret = input<Caret | null>(null);
-  /** Text typed into the active caret's inline input (driven by the parent). */
+  /** Key of the chip whose value is being edited inline (replaced by the input). */
+  readonly editingKey = input<string | null>(null);
+  /** Text shown in the inline input (the active caret's, or the edited chip's). */
   readonly draft = input('');
 
   readonly chipActivate = output<ChipVm>();
   readonly caretActivate = output<Caret>();
-  readonly caretInput = output<string>();
-  readonly caretKeydown = output<KeyboardEvent>();
+  readonly inlineInput = output<string>();
+  readonly inlineKeydown = output<KeyboardEvent>();
 
-  private readonly caretInputEl = viewChild<ElementRef<HTMLInputElement>>('caretInputEl');
+  private readonly inlineEl = viewChild<ElementRef<HTMLInputElement>>('inlineEl');
 
   constructor() {
-    // Focus the inline input the moment it appears (the viewChild ref only changes
-    // when the element is created/destroyed, not on each keystroke — so this runs once).
+    // Focus + select the inline input the moment it appears (the viewChild ref only
+    // changes when the element is created/destroyed, not per keystroke — runs once).
     effect(() => {
-      const el = this.caretInputEl()?.nativeElement;
+      const el = this.inlineEl()?.nativeElement;
       if (el) {
         el.focus();
-        const end = el.value.length;
-        el.setSelectionRange(end, end);
+        el.select();
       }
     });
   }

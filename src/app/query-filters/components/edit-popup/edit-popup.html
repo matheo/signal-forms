@@ -1,22 +1,13 @@
 @switch (mode().kind) {
   @case ('pick-field') {
-    @if (isCaretBuild()) {
-      <app-qf-suggestion-list
-        [items]="caretSuggestions()"
-        [showSearch]="false"
-        [activeIndex]="caretActiveIndex()"
-        (activeIndexChange)="caretActiveIndexChange.emit($event)"
-        (select)="caretSelect.emit($event)"
-        (cancel)="cancel.emit()"
-      />
-    } @else {
-      <app-qf-suggestion-list
-        [items]="fieldSuggestions()"
-        placeholder="Search fields…"
-        (select)="pickField.emit($event)"
-        (cancel)="cancel.emit()"
-      />
-    }
+    <app-qf-suggestion-list
+      [items]="inlineSuggestions()"
+      [showSearch]="false"
+      [activeIndex]="inlineActiveIndex()"
+      (activeIndexChange)="inlineActiveIndexChange.emit($event)"
+      (select)="inlineSelect.emit($event)"
+      (cancel)="cancel.emit()"
+    />
   }
   @case ('pick-operator') {
     <app-qf-suggestion-list

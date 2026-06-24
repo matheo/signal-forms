@@ -130,13 +130,20 @@ export class QueryFilters {
     return mode.kind === 'pick-field' ? mode.caret : null;
   });
 
+  /** Key of the field chip being edited inline (pick-field on an existing node). */
+  protected readonly editingFieldKey = computed<string | null>(() => {
+    const mode = this.editMode();
+    return mode.kind === 'pick-field' && mode.nodeId ? `${mode.nodeId}:field` : null;
+  });
+
   /**
-   * Suggestions for the inline caret input — fields, plus the logical operators and a
-   * grouping paren when there are siblings to combine. Filtered by what's been typed.
+   * Suggestions for the inline input: always the fields, plus — when building at a caret —
+   * the logical operators and a grouping paren (operators only once there are siblings to
+   * combine). Editing an existing field offers fields only. Filtered by what's been typed.
    */
-  protected readonly caretSuggestions = computed<SuggestionItem[]>(() => {
-    const caret = this.activeCaret();
-    if (!caret) {
+  protected readonly inlineSuggestions = computed<SuggestionItem[]>(() => {
+    const mode = this.editMode();
+    if (mode.kind !== 'pick-field') {
       return [];
     }
     const fields: SuggestionItem[] = this.filters().map((f) => ({
@@ -144,18 +151,23 @@ export class QueryFilters {
       label: f.label,
       hint: f.hive_type,
     }));
-    const group = this.index().get(caret.contextNodeId);
-    const hasSiblings = group?.kind === 'group' && group.children.length > 0;
-    const structural: SuggestionItem[] = [
-      ...(hasSiblings
-        ? ([
-            { value: 'op:and', label: 'AND', hint: 'logical' },
-            { value: 'op:or', label: 'OR', hint: 'logical' },
-          ] satisfies SuggestionItem[])
-        : []),
-      { value: 'grp', label: '( … )', hint: 'group' },
-    ];
-    const all = [...fields, ...structural];
+
+    let all = fields;
+    if (mode.caret) {
+      const group = this.index().get(mode.caret.contextNodeId);
+      const hasSiblings = group?.kind === 'group' && group.children.length > 0;
+      const structural: SuggestionItem[] = [
+        ...(hasSiblings
+          ? ([
+              { value: 'op:and', label: 'AND', hint: 'logical' },
+              { value: 'op:or', label: 'OR', hint: 'logical' },
+            ] satisfies SuggestionItem[])
+          : []),
+        { value: 'grp', label: '( … )', hint: 'group' },
+      ];
+      all = [...fields, ...structural];
+    }
+
     const q = this.draft().trim().toLowerCase();
     if (!q) {
       return all;
@@ -165,10 +177,10 @@ export class QueryFilters {
     );
   });
 
-  /** Highlighted suggestion; resets to the top whenever the text or caret changes. */
-  protected readonly caretIndex = linkedSignal<number>(() => {
+  /** Highlighted suggestion; resets to the top whenever the text or target changes. */
+  protected readonly inlineIndex = linkedSignal<number>(() => {
     this.draft();
-    this.activeCaret();
+    this.editMode();
     return 0;
   });
 
@@ -176,9 +188,14 @@ export class QueryFilters {
 
   protected onChipActivate(chip: ChipVm): void {
     switch (chip.kind) {
-      case 'cond-field':
+      case 'cond-field': {
+        // Edit the field in place: seed the inline input with the current field text.
+        const node = this.index().get(chip.nodeId);
+        this.draft.set(node?.kind === 'condition' ? node.field : '');
+        this.pendingConnector.set(null);
         this.editMode.set({ kind: 'pick-field', caret: null, nodeId: chip.nodeId });
         return;
+      }
       case 'cond-op':
         this.editMode.set({ kind: 'pick-operator', nodeId: chip.nodeId });
         return;
@@ -206,28 +223,28 @@ export class QueryFilters {
     this.editMode.set({ kind: 'pick-field', caret, nodeId: null });
   }
 
-  // --- inline caret input (build a new node by typing in the bar) -------------
+  // --- inline input (build a new node, or edit a field, by typing in the bar) -
 
-  protected onCaretInput(text: string): void {
+  protected onInlineInput(text: string): void {
     this.draft.set(text);
   }
 
-  protected onCaretKeydown(event: KeyboardEvent): void {
-    const items = this.caretSuggestions();
+  protected onInlineKeydown(event: KeyboardEvent): void {
+    const items = this.inlineSuggestions();
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this.caretIndex.update((i) => Math.min(i + 1, items.length - 1));
+        this.inlineIndex.update((i) => Math.min(i + 1, items.length - 1));
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.caretIndex.update((i) => Math.max(i - 1, 0));
+        this.inlineIndex.update((i) => Math.max(i - 1, 0));
         break;
       case 'Enter': {
         event.preventDefault();
-        const item = items[this.caretIndex()];
+        const item = items[this.inlineIndex()];
         if (item) {
-          this.onCaretSelect(item.value);
+          this.onInlineSelect(item.value);
         }
         break;
       }
@@ -238,14 +255,35 @@ export class QueryFilters {
     }
   }
 
-  /** Decode a caret suggestion (`f:<field>` | `op:and` | `op:or` | `grp`) and apply it. */
-  protected onCaretSelect(value: string): void {
+  /**
+   * Apply an inline selection. Editing an existing field expects `f:<field>`; building at a
+   * caret also accepts `op:and` / `op:or` (staged connector) and `grp` (a new group).
+   */
+  protected onInlineSelect(value: string): void {
     const mode = this.editMode();
-    if (mode.kind !== 'pick-field' || !mode.caret) {
+    if (mode.kind !== 'pick-field') {
+      return;
+    }
+    this.draft.set('');
+
+    // Editing an existing field chip in place.
+    if (mode.nodeId) {
+      if (value.startsWith('f:')) {
+        const field = value.slice(2);
+        this.commit(
+          updateNode(this.ast(), mode.nodeId, (node) =>
+            node.kind === 'condition' ? { ...node, field } : node,
+          ),
+        );
+        this.editMode.set({ kind: 'pick-operator', nodeId: mode.nodeId });
+      }
+      return;
+    }
+
+    if (!mode.caret) {
       return;
     }
     const caret = mode.caret;
-    this.draft.set('');
     const connector = this.pendingConnector() ?? 'and';
 
     if (value === 'op:and' || value === 'op:or') {
@@ -302,25 +340,6 @@ export class QueryFilters {
   }
 
   // --- popup commits ----------------------------------------------------------
-
-  protected onPickField(field: string): void {
-    const mode = this.editMode();
-    if (mode.kind !== 'pick-field') {
-      return;
-    }
-    if (mode.nodeId) {
-      this.commit(
-        updateNode(this.ast(), mode.nodeId, (node) =>
-          node.kind === 'condition' ? { ...node, field } : node,
-        ),
-      );
-      this.editMode.set({ kind: 'pick-operator', nodeId: mode.nodeId });
-    } else if (mode.caret) {
-      const node = newCondition(field);
-      this.commit(insertChild(this.ast(), mode.caret.contextNodeId, mode.caret.insertIndex, node));
-      this.editMode.set({ kind: 'pick-operator', nodeId: node.id });
-    }
-  }
 
   protected onPickOperator(operator: string): void {
     const mode = this.editMode();

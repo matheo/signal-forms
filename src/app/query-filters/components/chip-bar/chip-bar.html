@@ -1,24 +1,17 @@
 <div class="qf-bar flex flex-wrap items-center">
   @for (item of items(); track item.key) {
     @if (item.kind === 'chip') {
-      <app-qf-chip
-        [chip]="item.chip"
-        [selected]="item.chip.key === selectedKey()"
-        (activate)="chipActivate.emit(item.chip)"
-      />
+      @if (item.chip.key === editingKey()) {
+        <ng-container [ngTemplateOutlet]="inlineTpl" />
+      } @else {
+        <app-qf-chip
+          [chip]="item.chip"
+          [selected]="item.chip.key === selectedKey()"
+          (activate)="chipActivate.emit(item.chip)"
+        />
+      }
     } @else if (isActiveCaret(item.caret)) {
-      <input
-        #caretInputEl
-        type="text"
-        class="qf-caret-input"
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="Type a field, logical operator or ("
-        [value]="draft()"
-        [attr.size]="draft().length || 1"
-        (input)="caretInput.emit(caretInputEl.value)"
-        (keydown)="caretKeydown.emit($event)"
-      />
+      <ng-container [ngTemplateOutlet]="inlineTpl" />
     } @else {
       <button
         type="button"
@@ -33,3 +26,18 @@
     <span class="qf-placeholder text-gray-400">Click to add a filter…</span>
   }
 </div>
+
+<ng-template #inlineTpl>
+  <input
+    #inlineEl
+    type="text"
+    class="qf-caret-input"
+    autocomplete="off"
+    spellcheck="false"
+    aria-label="Type a field, logical operator or ("
+    [value]="draft()"
+    [attr.size]="draft().length || 1"
+    (input)="inlineInput.emit(inlineEl.value)"
+    (keydown)="inlineKeydown.emit($event)"
+  />
+</ng-template>
