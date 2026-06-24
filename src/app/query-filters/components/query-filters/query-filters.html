@@ -9,6 +9,7 @@
     (caretActivate)="onCaretActivate($event)"
     (inlineInput)="onInlineInput($event)"
     (inlineKeydown)="onInlineKeydown($event)"
+    (inlineBlur)="onInlineBlur()"
   />
 </div>
 
@@ -26,7 +27,7 @@
     <app-qf-edit-popup
       [mode]="editMode()"
       [filters]="filters()"
-      [initialValue]="initialValue()"
+      [booleanOptions]="booleanOptions"
       [initialCoalesce]="initialCoalesce()"
       [inlineSuggestions]="inlineSuggestions()"
       [inlineActiveIndex]="inlineIndex()"

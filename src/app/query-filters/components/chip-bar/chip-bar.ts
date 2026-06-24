@@ -27,6 +27,7 @@ export class ChipBar {
   readonly caretActivate = output<Caret>();
   readonly inlineInput = output<string>();
   readonly inlineKeydown = output<KeyboardEvent>();
+  readonly inlineBlur = output<void>();
 
   private readonly inlineEl = viewChild<ElementRef<HTMLInputElement>>('inlineEl');
 

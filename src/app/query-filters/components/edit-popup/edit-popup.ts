@@ -1,5 +1,4 @@
-import { Component, input, linkedSignal, output } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, input, output } from '@angular/core';
 import { FilterDefinition } from '../../../query-builder';
 import { CoalesceModel, EditMode, SuggestionItem } from '../../models';
 import { CoalesceEditor } from '../coalesce-editor/coalesce-editor';
@@ -10,12 +9,13 @@ import { SuggestionList } from '../suggestion-list/suggestion-list';
   templateUrl: './edit-popup.html',
   styleUrl: './edit-popup.scss',
   host: { class: 'block' },
-  imports: [MatButtonModule, CoalesceEditor, SuggestionList],
+  imports: [CoalesceEditor, SuggestionList],
 })
 export class EditPopup {
   readonly mode = input.required<EditMode>();
   readonly filters = input.required<FilterDefinition[]>();
-  readonly initialValue = input('');
+  /** True/false options for boolean value editing (the only `edit-value` shown in the popup). */
+  readonly booleanOptions = input<SuggestionItem[]>([]);
   readonly initialCoalesce = input.required<CoalesceModel>();
   /** Inline suggestions (fields/operators, plus logical/grouping when at a caret), already
    * filtered by the bar input. The query + keyboard nav are owned by the inline bar input. */
@@ -27,16 +27,4 @@ export class EditPopup {
   readonly inlineSelect = output<string>();
   readonly inlineActiveIndexChange = output<number>();
   readonly cancel = output<void>();
-
-  protected readonly valueText = linkedSignal(() => this.initialValue());
-
-  protected onValueKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.commitValue.emit(this.valueText());
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.cancel.emit();
-    }
-  }
 }

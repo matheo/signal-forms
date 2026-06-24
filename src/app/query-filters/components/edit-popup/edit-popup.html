@@ -20,20 +20,12 @@
     />
   }
   @case ('edit-value') {
-    <div class="qf-value-edit flex items-center gap-2 p-3">
-      <input
-        #valueInput
-        type="text"
-        class="qf-value-input"
-        cdkFocusInitial
-        autofocus
-        placeholder="value"
-        [value]="valueText()"
-        (input)="valueText.set(valueInput.value)"
-        (keydown)="onValueKeydown($event)"
-      />
-      <button matButton="filled" (click)="commitValue.emit(valueText())">Apply</button>
-    </div>
+    <app-qf-suggestion-list
+      [items]="booleanOptions()"
+      placeholder="true / false"
+      (select)="commitValue.emit($event)"
+      (cancel)="cancel.emit()"
+    />
   }
   @case ('edit-coalesce') {
     <app-qf-coalesce-editor

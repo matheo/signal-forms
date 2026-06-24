@@ -39,5 +39,6 @@
     [attr.size]="draft().length || 1"
     (input)="inlineInput.emit(inlineEl.value)"
     (keydown)="inlineKeydown.emit($event)"
+    (blur)="inlineBlur.emit()"
   />
 </ng-template>

@@ -21,6 +21,7 @@ import {
 import {
   buildIndex,
   emptyAst,
+  findNode,
   insertChild,
   newCondition,
   newGroup,
@@ -56,12 +57,22 @@ export class QueryFilters {
   protected readonly draft = signal('');
   /** Connector chosen at the caret (typing `AND`/`OR`) to join the next inserted node. */
   private readonly pendingConnector = signal<LogicalConnector | null>(null);
+  /** Swallow the blur that fires when an inline input is destroyed by a mode switch
+   * (e.g. operator → value), so it isn't mistaken for "clicked away, commit the value". */
+  private suppressNextBlur = false;
 
   protected readonly chipStream = computed(() => project(this.ast()));
   protected readonly index = computed(() => buildIndex(this.ast()));
 
   protected readonly positions = OVERLAY_POSITIONS;
-  protected readonly isOpen = computed(() => this.editMode().kind !== 'idle');
+  /** The popup is shown for every edit mode except inline value typing (string/number). */
+  protected readonly isOpen = computed(() => {
+    const kind = this.editMode().kind;
+    if (kind === 'idle') {
+      return false;
+    }
+    return kind === 'edit-value' ? this.isBooleanValue() : true;
+  });
 
   /** Guards the input → parse → serialize → model loop: ignore our own writes. */
   private lastSynced: LogicalExpression | null = null;
@@ -94,13 +105,25 @@ export class QueryFilters {
     return field ? (this.filters().find((f) => f.field === field) ?? null) : null;
   });
 
-  protected readonly initialValue = computed(() => {
-    const node = this.activeNode();
-    if (node && (node.kind === 'condition' || node.kind === 'fn')) {
-      return node.value === null ? '' : String(node.value);
+  /** The value-type key of the active node's field ('string' | 'number' | 'boolean' | …). */
+  private readonly valueTypeKey = computed<string>(() => {
+    const filter = this.contextFilter();
+    if (!filter) {
+      return 'string';
     }
-    return '';
+    return 'fn' in filter.type ? filter.type.input : filter.type.type;
   });
+
+  /** Booleans use a popup selector; everything else is typed inline in the bar. */
+  protected readonly isBooleanValue = computed(
+    () => this.editMode().kind === 'edit-value' && this.valueTypeKey() === 'boolean',
+  );
+
+  /** True/false options for the boolean value popup. */
+  protected readonly booleanOptions: SuggestionItem[] = [
+    { value: 'true', label: 'True' },
+    { value: 'false', label: 'False' },
+  ];
 
   protected readonly initialCoalesce = computed<CoalesceModel>(() => {
     const node = this.activeNode();
@@ -132,7 +155,7 @@ export class QueryFilters {
     return mode.kind === 'pick-field' ? mode.caret : null;
   });
 
-  /** Key of the chip being edited inline (field or operator on an existing node). */
+  /** Key of the chip being edited inline (field, operator, or a non-boolean value). */
   protected readonly editingChipKey = computed<string | null>(() => {
     const mode = this.editMode();
     if (mode.kind === 'pick-field' && mode.nodeId) {
@@ -140,6 +163,9 @@ export class QueryFilters {
     }
     if (mode.kind === 'pick-operator') {
       return `${mode.nodeId}:operator`;
+    }
+    if (mode.kind === 'edit-value' && !this.isBooleanValue()) {
+      return `${mode.nodeId}:value`;
     }
     return null;
   });
@@ -227,9 +253,15 @@ export class QueryFilters {
         this.pendingConnector.set(null);
         this.editMode.set({ kind: 'pick-operator', nodeId: chip.nodeId });
         return;
-      case 'cond-value':
+      case 'cond-value': {
+        // Boolean values open a popup selector; string/number are typed inline (seed the input).
+        const node = this.index().get(chip.nodeId);
+        const value = node?.kind === 'condition' || node?.kind === 'fn' ? node.value : null;
+        this.draft.set(value === null ? '' : String(value));
+        this.pendingConnector.set(null);
         this.editMode.set({ kind: 'edit-value', nodeId: chip.nodeId });
         return;
+      }
       case 'fn': {
         const node = this.index().get(chip.nodeId);
         if (node?.kind === 'fn' && node.args.fn === 'coalesce') {
@@ -258,6 +290,18 @@ export class QueryFilters {
   }
 
   protected onInlineKeydown(event: KeyboardEvent): void {
+    // Inline value typing is free text: commit on Enter, cancel on Escape, no suggestions.
+    if (this.editMode().kind === 'edit-value') {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.onCommitValue(this.draft());
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeEditing();
+      }
+      return;
+    }
+
     const items = this.inlineSuggestions();
     switch (event.key) {
       case 'ArrowDown':
@@ -283,6 +327,17 @@ export class QueryFilters {
     }
   }
 
+  /** Commit an inline value edit when the input loses focus (clicked away). */
+  protected onInlineBlur(): void {
+    if (this.suppressNextBlur) {
+      this.suppressNextBlur = false;
+      return;
+    }
+    if (this.editMode().kind === 'edit-value') {
+      this.onCommitValue(this.draft());
+    }
+  }
+
   /**
    * Apply an inline selection. Editing an existing field expects `f:<field>`; building at a
    * caret also accepts `op:and` / `op:or` (staged connector) and `grp` (a new group).
@@ -291,15 +346,20 @@ export class QueryFilters {
     const mode = this.editMode();
     this.draft.set('');
 
-    // Editing an operator chip in place: set it and move on to the value.
+    // Editing an operator chip in place: set it and move straight on to the value.
     if (mode.kind === 'pick-operator') {
-      this.commit(
-        updateNode(this.ast(), mode.nodeId, (node) =>
-          node.kind === 'condition' || node.kind === 'fn'
-            ? { ...node, operator: value as PartialOperator }
-            : node,
-        ),
+      const next = updateNode(this.ast(), mode.nodeId, (node) =>
+        node.kind === 'condition' || node.kind === 'fn'
+          ? { ...node, operator: value as PartialOperator }
+          : node,
       );
+      this.commit(next);
+      // Seed the value input with the node's existing value, and ignore the operator
+      // input's destruction blur so the value editor isn't closed before it opens.
+      const node = findNode(next, mode.nodeId);
+      const current = node?.kind === 'condition' || node?.kind === 'fn' ? node.value : null;
+      this.draft.set(current === null ? '' : String(current));
+      this.suppressNextBlur = true;
       this.editMode.set({ kind: 'edit-value', nodeId: mode.nodeId });
       return;
     }
@@ -413,6 +473,7 @@ export class QueryFilters {
   protected closeEditing(): void {
     this.draft.set('');
     this.pendingConnector.set(null);
+    this.suppressNextBlur = false;
     this.editMode.set({ kind: 'idle' });
   }
 
@@ -426,8 +487,7 @@ export class QueryFilters {
   }
 
   private coerceValue(raw: string): ConditionValue {
-    const filter = this.contextFilter();
-    const key = filter ? ('fn' in filter.type ? filter.type.input : filter.type.type) : 'string';
+    const key = this.valueTypeKey();
     if (key === 'number') {
       const n = Number(raw);
       return Number.isNaN(n) ? raw : n;
