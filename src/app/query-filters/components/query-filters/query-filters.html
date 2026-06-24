@@ -13,6 +13,7 @@
   [cdkConnectedOverlayOrigin]="origin"
   [cdkConnectedOverlayOpen]="isOpen()"
   [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayWidth]="origin.elementRef.nativeElement.offsetWidth"
   [cdkConnectedOverlayHasBackdrop]="false"
   (overlayOutsideClick)="closeEditing()"
   (detach)="closeEditing()"
