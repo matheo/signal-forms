@@ -11,6 +11,7 @@ import {
   ChipVm,
   CoalesceModel,
   EditMode,
+  LogicalConnector,
   PartialOperator,
   QueryAst,
   SuggestionItem,
@@ -51,6 +52,8 @@ export class QueryFilters {
 
   /** Text typed into the active caret's inline input while building a new node. */
   protected readonly draft = signal('');
+  /** Connector chosen at the caret (typing `AND`/`OR`) to join the next inserted node. */
+  private readonly pendingConnector = signal<LogicalConnector | null>(null);
 
   protected readonly chipStream = computed(() => project(this.ast()));
   protected readonly index = computed(() => buildIndex(this.ast()));
@@ -199,6 +202,7 @@ export class QueryFilters {
 
   protected onCaretActivate(caret: Caret): void {
     this.draft.set('');
+    this.pendingConnector.set(null);
     this.editMode.set({ kind: 'pick-field', caret, nodeId: null });
   }
 
@@ -242,26 +246,29 @@ export class QueryFilters {
     }
     const caret = mode.caret;
     this.draft.set('');
+    const connector = this.pendingConnector() ?? 'and';
+
+    if (value === 'op:and' || value === 'op:or') {
+      // Stage the connector for the next inserted node; keep building at the same caret.
+      this.pendingConnector.set(value === 'op:and' ? 'and' : 'or');
+      return;
+    }
+
+    this.pendingConnector.set(null);
 
     if (value.startsWith('f:')) {
       const node = newCondition(value.slice(2));
-      this.commit(insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, node));
-      this.editMode.set({ kind: 'pick-operator', nodeId: node.id });
-      return;
-    }
-    if (value === 'op:and' || value === 'op:or') {
-      const operator = value === 'op:and' ? 'and' : 'or';
       this.commit(
-        updateNode(this.ast(), caret.contextNodeId, (node) =>
-          node.kind === 'group' ? { ...node, operator } : node,
-        ),
+        insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, node, connector),
       );
-      this.closeEditing();
+      this.editMode.set({ kind: 'pick-operator', nodeId: node.id });
       return;
     }
     if (value === 'grp') {
       const group = newGroup([]);
-      this.commit(insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, group));
+      this.commit(
+        insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, group, connector),
+      );
       // Continue building the first condition inside the new parens.
       this.editMode.set({
         kind: 'pick-field',
@@ -271,17 +278,26 @@ export class QueryFilters {
     }
   }
 
-  /** Toggle a group's NOT flag or its AND/OR operator inline (no popup). */
+  /** Toggle a group's NOT flag, or flip a single gap's AND/OR connector inline (no popup). */
   private onLogicalActivate(chip: ChipVm): void {
-    const isNot = chip.key.endsWith(':not');
+    if (chip.key.endsWith(':not')) {
+      this.commit(
+        updateNode(this.ast(), chip.nodeId, (node) =>
+          node.kind === 'group' ? { ...node, not: !node.not } : node,
+        ),
+      );
+      return;
+    }
+    const gap = Number(chip.key.split(':').pop());
     this.commit(
-      updateNode(this.ast(), chip.nodeId, (node) =>
-        node.kind === 'group'
-          ? isNot
-            ? { ...node, not: !node.not }
-            : { ...node, operator: node.operator === 'and' ? 'or' : 'and' }
-          : node,
-      ),
+      updateNode(this.ast(), chip.nodeId, (node) => {
+        if (node.kind !== 'group' || !Number.isInteger(gap) || gap >= node.operators.length) {
+          return node;
+        }
+        const operators = [...node.operators];
+        operators[gap] = operators[gap] === 'and' ? 'or' : 'and';
+        return { ...node, operators };
+      }),
     );
   }
 
@@ -349,6 +365,8 @@ export class QueryFilters {
   }
 
   protected closeEditing(): void {
+    this.draft.set('');
+    this.pendingConnector.set(null);
     this.editMode.set({ kind: 'idle' });
   }
 

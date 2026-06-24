@@ -39,12 +39,40 @@ export function serialize(ast: QueryAst): LogicalExpression {
   return groupToLogical(ast.root);
 }
 
+/**
+ * Collapse a per-gap group into the public single-operator tree. Because the public
+ * model has one operator per level, mixed connectors are nested by precedence
+ * (`AND` binds tighter than `OR`): `a AND b OR c` -> `OR( AND(a, b), c )`.
+ */
 function groupToLogical(group: GroupNode): LogicalExpression {
-  return {
-    not: group.not,
-    operator: group.operator,
-    expressions: group.children.map(nodeToExpression),
-  };
+  const exprs = group.children.map(nodeToExpression);
+
+  if (exprs.length <= 1) {
+    return { not: group.not, operator: 'and', expressions: exprs };
+  }
+
+  // Split into OR-segments; within each segment children are joined by AND.
+  const segments: Expression[][] = [[exprs[0]!]];
+  group.operators.forEach((op, gap) => {
+    const next = exprs[gap + 1]!;
+    if (op === 'or') {
+      segments.push([next]);
+    } else {
+      segments[segments.length - 1]!.push(next);
+    }
+  });
+
+  const orChildren: Expression[] = segments.map((seg) =>
+    seg.length === 1 ? seg[0]! : { not: false, operator: 'and', expressions: seg },
+  );
+
+  if (orChildren.length === 1) {
+    const only = orChildren[0]!;
+    return isLogicalExpr(only)
+      ? { ...only, not: group.not }
+      : { not: group.not, operator: 'and', expressions: [only] };
+  }
+  return { not: group.not, operator: 'or', expressions: orChildren };
 }
 
 function nodeToExpression(node: AstNode): Expression {

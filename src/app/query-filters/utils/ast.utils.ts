@@ -6,6 +6,7 @@ import {
   FnName,
   FnNode,
   GroupNode,
+  LogicalConnector,
   NodeId,
   PartialOperator,
   QueryAst,
@@ -24,9 +25,16 @@ export const newCondition = (
 
 export const newGroup = (
   children: readonly AstNode[] = [],
-  operator: 'and' | 'or' = 'and',
+  operator: LogicalConnector = 'and',
   not = false,
-): GroupNode => ({ id: uid(), kind: 'group', not, operator, children });
+): GroupNode => ({
+  id: uid(),
+  kind: 'group',
+  not,
+  // Seed every gap with the same connector; per-gap edits diverge them later.
+  operators: Array.from({ length: Math.max(0, children.length - 1) }, () => operator),
+  children,
+});
 
 export const newFn = (
   args: FnArgs,
@@ -73,20 +81,31 @@ function mapNode(node: AstNode, id: NodeId, patch: (node: AstNode) => AstNode): 
   return node;
 }
 
-/** Insert `child` into the group `parentId` at `index`. */
+/**
+ * Insert `child` into the group `parentId` at `index`, joined to its new neighbour by
+ * `connector` (the gap immediately left of the child, or right of it when inserted first).
+ */
 export function insertChild(
   ast: QueryAst,
   parentId: NodeId,
   index: number,
   child: AstNode,
+  connector: LogicalConnector = 'and',
 ): QueryAst {
   return updateNode(ast, parentId, (node) => {
     if (!isGroup(node)) {
       return node;
     }
+    const at = Math.max(0, Math.min(index, node.children.length));
     const children = [...node.children];
-    children.splice(Math.max(0, Math.min(index, children.length)), 0, child);
-    return { ...node, children };
+    children.splice(at, 0, child);
+    const operators = [...node.operators];
+    // A new child adds a gap only when it now has a neighbor. Place the connector to
+    // its left (gap `at - 1`), or to its right (gap 0) when it became the first child.
+    if (node.children.length > 0) {
+      operators.splice(at === 0 ? 0 : at - 1, 0, connector);
+    }
+    return { ...node, children, operators };
   });
 }
 
@@ -105,18 +124,21 @@ function pruneNode(node: AstNode, id: NodeId): AstNode {
   }
   let changed = false;
   const children: AstNode[] = [];
-  for (const child of node.children) {
+  const operators = [...node.operators];
+  node.children.forEach((child, i) => {
     if (child.id === id) {
       changed = true;
-      continue;
+      // Drop the gap that joined this child: its left connector, or the right one when first.
+      operators.splice(i === 0 ? 0 : i - 1, 1);
+      return;
     }
     const next = pruneNode(child, id);
     if (next !== child) {
       changed = true;
     }
     children.push(next);
-  }
-  return changed ? { ...node, children } : node;
+  });
+  return changed ? { ...node, children, operators } : node;
 }
 
 // --- lookups -----------------------------------------------------------------

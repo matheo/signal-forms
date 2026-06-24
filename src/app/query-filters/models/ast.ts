@@ -21,11 +21,20 @@ interface AstNodeBase {
   readonly kind: AstNodeKind;
 }
 
-/** A logical group (`AND`/`OR`, optionally negated). Parentheses are implied by depth > 0. */
+/** A connector between two adjacent group children. */
+export type LogicalConnector = 'and' | 'or';
+
+/**
+ * A logical group, optionally negated. Parentheses are implied by depth > 0.
+ *
+ * Connectors are **per-gap**: `operators[i]` joins `children[i]` and `children[i + 1]`,
+ * so a single group can mix `AND`/`OR` (e.g. `a AND b OR c`). Invariant:
+ * `operators.length === max(0, children.length - 1)`.
+ */
 export interface GroupNode extends AstNodeBase {
   readonly kind: 'group';
   readonly not: boolean;
-  readonly operator: 'and' | 'or';
+  readonly operators: readonly LogicalConnector[];
   readonly children: readonly AstNode[];
 }
 

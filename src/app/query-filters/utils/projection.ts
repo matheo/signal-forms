@@ -69,11 +69,12 @@ function emitGroup(
   const childDepth = isRoot ? depth : depth + 1;
   group.children.forEach((child, i) => {
     if (i > 0) {
+      const gap = i - 1; // operators[gap] joins children[gap] and children[gap + 1]
       chips.push({
-        key: `${group.id}:op:${i}`,
+        key: `${group.id}:op:${gap}`,
         nodeId: group.id,
         kind: 'logical',
-        text: group.operator.toUpperCase(),
+        text: (group.operators[gap] ?? 'and').toUpperCase(),
         editable: true,
         depth,
       });
