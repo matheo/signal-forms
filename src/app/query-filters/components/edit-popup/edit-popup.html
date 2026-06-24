@@ -11,9 +11,11 @@
   }
   @case ('pick-operator') {
     <app-qf-suggestion-list
-      [items]="operatorSuggestions()"
-      placeholder="Search operators…"
-      (select)="pickOperator.emit($event)"
+      [items]="inlineSuggestions()"
+      [showSearch]="false"
+      [activeIndex]="inlineActiveIndex()"
+      (activeIndexChange)="inlineActiveIndexChange.emit($event)"
+      (select)="inlineSelect.emit($event)"
       (cancel)="cancel.emit()"
     />
   }

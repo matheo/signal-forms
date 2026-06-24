@@ -1,4 +1,14 @@
-import { Component, computed, input, model, output, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  input,
+  model,
+  output,
+  signal,
+  viewChildren,
+} from '@angular/core';
 import { SuggestionItem } from '../../models';
 
 @Component({
@@ -20,6 +30,15 @@ export class SuggestionList {
   protected readonly query = signal('');
   /** A `model` so the parent can drive/observe the highlight when `showSearch` is off. */
   readonly activeIndex = model(0);
+
+  private readonly optionEls = viewChildren<ElementRef<HTMLElement>>('optionEl');
+
+  constructor() {
+    // Keep the highlighted option visible as the active index moves (arrow-key nav).
+    effect(() => {
+      this.optionEls()[this.activeIndex()]?.nativeElement.scrollIntoView({ block: 'nearest' });
+    });
+  }
 
   protected readonly filtered = computed(() => {
     if (!this.showSearch()) {

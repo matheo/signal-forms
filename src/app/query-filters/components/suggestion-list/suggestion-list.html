@@ -16,6 +16,7 @@
   <ul class="qf-options" role="listbox">
     @for (item of filtered(); track item.value; let i = $index) {
       <li
+        #optionEl
         role="option"
         class="qf-option flex items-baseline justify-between gap-3"
         [class.qf-option--active]="i === activeIndex()"
