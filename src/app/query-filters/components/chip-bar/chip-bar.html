@@ -1,4 +1,4 @@
-<div class="qf-bar flex flex-wrap items-center gap-1">
+<div class="qf-bar flex flex-wrap items-center">
   @for (item of items(); track item.key) {
     @if (item.kind === 'chip') {
       <app-qf-chip
@@ -6,11 +6,23 @@
         [selected]="item.chip.key === selectedKey()"
         (activate)="chipActivate.emit(item.chip)"
       />
+    } @else if (isActiveCaret(item.caret)) {
+      <input
+        #caretInputEl
+        type="text"
+        class="qf-caret-input"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Type a field, logical operator or ("
+        [value]="draft()"
+        [attr.size]="draft().length || 1"
+        (input)="caretInput.emit(caretInputEl.value)"
+        (keydown)="caretKeydown.emit($event)"
+      />
     } @else {
       <button
         type="button"
         class="qf-caret"
-        [class.qf-caret--active]="isActiveCaret(item.caret)"
         aria-label="Insert here"
         (click)="caretActivate.emit(item.caret)"
       ></button>

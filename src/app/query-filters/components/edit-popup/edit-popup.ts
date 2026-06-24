@@ -20,12 +20,23 @@ export class EditPopup {
   readonly contextFilter = input<FilterDefinition | null>(null);
   readonly initialValue = input('');
   readonly initialCoalesce = input.required<CoalesceModel>();
+  /** Caret-build suggestions (fields + logical + grouping), already filtered by the bar input. */
+  readonly caretSuggestions = input<SuggestionItem[]>([]);
+  readonly caretActiveIndex = input(0);
 
   readonly pickField = output<string>();
   readonly pickOperator = output<string>();
   readonly commitValue = output<string>();
   readonly commitCoalesce = output<CoalesceModel>();
+  readonly caretSelect = output<string>();
+  readonly caretActiveIndexChange = output<number>();
   readonly cancel = output<void>();
+
+  /** True while building a brand-new node from a caret (vs. editing an existing field chip). */
+  protected readonly isCaretBuild = computed(() => {
+    const m = this.mode();
+    return m.kind === 'pick-field' && m.caret != null;
+  });
 
   protected readonly fieldSuggestions = computed<SuggestionItem[]>(() =>
     this.filters().map((f) => ({ value: f.field, label: f.label, hint: f.hive_type })),

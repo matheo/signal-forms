@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, model, output, signal } from '@angular/core';
 import { SuggestionItem } from '../../models';
 
 @Component({
@@ -10,14 +10,21 @@ import { SuggestionItem } from '../../models';
 export class SuggestionList {
   readonly items = input.required<SuggestionItem[]>();
   readonly placeholder = input('Search…');
+  /** When false the built-in search box is hidden and `items` are shown as-is — the
+   * query + keyboard nav are owned externally (e.g. the inline caret input in the bar). */
+  readonly showSearch = input(true);
 
   readonly select = output<string>();
   readonly cancel = output<void>();
 
   protected readonly query = signal('');
-  protected readonly activeIndex = signal(0);
+  /** A `model` so the parent can drive/observe the highlight when `showSearch` is off. */
+  readonly activeIndex = model(0);
 
   protected readonly filtered = computed(() => {
+    if (!this.showSearch()) {
+      return this.items(); // externally pre-filtered
+    }
     const q = this.query().trim().toLowerCase();
     const items = this.items();
     if (!q) {

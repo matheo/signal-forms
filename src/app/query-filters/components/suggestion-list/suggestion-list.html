@@ -1,15 +1,17 @@
 <div class="qf-suggestions flex flex-col">
-  <input
-    #search
-    type="text"
-    class="qf-search"
-    cdkFocusInitial
-    autofocus
-    [placeholder]="placeholder()"
-    [value]="query()"
-    (input)="onInput(search.value)"
-    (keydown)="onKeydown($event)"
-  />
+  @if (showSearch()) {
+    <input
+      #search
+      type="text"
+      class="qf-search"
+      cdkFocusInitial
+      autofocus
+      [placeholder]="placeholder()"
+      [value]="query()"
+      (input)="onInput(search.value)"
+      (keydown)="onKeydown($event)"
+    />
+  }
 
   <ul class="qf-options" role="listbox">
     @for (item of filtered(); track item.value; let i = $index) {

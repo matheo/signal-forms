@@ -3,8 +3,11 @@
     [stream]="chipStream()"
     [selectedKey]="selectedKey()"
     [activeCaret]="activeCaret()"
+    [draft]="draft()"
     (chipActivate)="onChipActivate($event)"
     (caretActivate)="onCaretActivate($event)"
+    (caretInput)="onCaretInput($event)"
+    (caretKeydown)="onCaretKeydown($event)"
   />
 </div>
 
@@ -25,10 +28,14 @@
       [contextFilter]="contextFilter()"
       [initialValue]="initialValue()"
       [initialCoalesce]="initialCoalesce()"
+      [caretSuggestions]="caretSuggestions()"
+      [caretActiveIndex]="caretIndex()"
       (pickField)="onPickField($event)"
       (pickOperator)="onPickOperator($event)"
       (commitValue)="onCommitValue($event)"
       (commitCoalesce)="onCommitCoalesce($event)"
+      (caretSelect)="onCaretSelect($event)"
+      (caretActiveIndexChange)="caretIndex.set($event)"
       (cancel)="closeEditing()"
     />
   </div>

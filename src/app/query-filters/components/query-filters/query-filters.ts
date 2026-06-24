@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, model, signal } from '@angular/core';
+import { Component, computed, effect, input, linkedSignal, model, signal } from '@angular/core';
 import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
 import {
   ConditionValue,
@@ -13,12 +13,14 @@ import {
   EditMode,
   PartialOperator,
   QueryAst,
+  SuggestionItem,
 } from '../../models';
 import {
   buildIndex,
   emptyAst,
   insertChild,
   newCondition,
+  newGroup,
   parse,
   project,
   serialize,
@@ -46,6 +48,9 @@ export class QueryFilters {
   /** Internal optimized AST. Lives in a plain signal — never a Signal Form. */
   protected readonly ast = signal<QueryAst>(emptyAst());
   protected readonly editMode = signal<EditMode>({ kind: 'idle' });
+
+  /** Text typed into the active caret's inline input while building a new node. */
+  protected readonly draft = signal('');
 
   protected readonly chipStream = computed(() => project(this.ast()));
   protected readonly index = computed(() => buildIndex(this.ast()));
@@ -122,6 +127,48 @@ export class QueryFilters {
     return mode.kind === 'pick-field' ? mode.caret : null;
   });
 
+  /**
+   * Suggestions for the inline caret input — fields, plus the logical operators and a
+   * grouping paren when there are siblings to combine. Filtered by what's been typed.
+   */
+  protected readonly caretSuggestions = computed<SuggestionItem[]>(() => {
+    const caret = this.activeCaret();
+    if (!caret) {
+      return [];
+    }
+    const fields: SuggestionItem[] = this.filters().map((f) => ({
+      value: `f:${f.field}`,
+      label: f.label,
+      hint: f.hive_type,
+    }));
+    const group = this.index().get(caret.contextNodeId);
+    const hasSiblings = group?.kind === 'group' && group.children.length > 0;
+    const structural: SuggestionItem[] = [
+      ...(hasSiblings
+        ? ([
+            { value: 'op:and', label: 'AND', hint: 'logical' },
+            { value: 'op:or', label: 'OR', hint: 'logical' },
+          ] satisfies SuggestionItem[])
+        : []),
+      { value: 'grp', label: '( … )', hint: 'group' },
+    ];
+    const all = [...fields, ...structural];
+    const q = this.draft().trim().toLowerCase();
+    if (!q) {
+      return all;
+    }
+    return all.filter(
+      (it) => it.label.toLowerCase().includes(q) || it.value.toLowerCase().includes(q),
+    );
+  });
+
+  /** Highlighted suggestion; resets to the top whenever the text or caret changes. */
+  protected readonly caretIndex = linkedSignal<number>(() => {
+    this.draft();
+    this.activeCaret();
+    return 0;
+  });
+
   // --- chip / caret interaction ----------------------------------------------
 
   protected onChipActivate(chip: ChipVm): void {
@@ -151,7 +198,77 @@ export class QueryFilters {
   }
 
   protected onCaretActivate(caret: Caret): void {
+    this.draft.set('');
     this.editMode.set({ kind: 'pick-field', caret, nodeId: null });
+  }
+
+  // --- inline caret input (build a new node by typing in the bar) -------------
+
+  protected onCaretInput(text: string): void {
+    this.draft.set(text);
+  }
+
+  protected onCaretKeydown(event: KeyboardEvent): void {
+    const items = this.caretSuggestions();
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.caretIndex.update((i) => Math.min(i + 1, items.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.caretIndex.update((i) => Math.max(i - 1, 0));
+        break;
+      case 'Enter': {
+        event.preventDefault();
+        const item = items[this.caretIndex()];
+        if (item) {
+          this.onCaretSelect(item.value);
+        }
+        break;
+      }
+      case 'Escape':
+        event.preventDefault();
+        this.closeEditing();
+        break;
+    }
+  }
+
+  /** Decode a caret suggestion (`f:<field>` | `op:and` | `op:or` | `grp`) and apply it. */
+  protected onCaretSelect(value: string): void {
+    const mode = this.editMode();
+    if (mode.kind !== 'pick-field' || !mode.caret) {
+      return;
+    }
+    const caret = mode.caret;
+    this.draft.set('');
+
+    if (value.startsWith('f:')) {
+      const node = newCondition(value.slice(2));
+      this.commit(insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, node));
+      this.editMode.set({ kind: 'pick-operator', nodeId: node.id });
+      return;
+    }
+    if (value === 'op:and' || value === 'op:or') {
+      const operator = value === 'op:and' ? 'and' : 'or';
+      this.commit(
+        updateNode(this.ast(), caret.contextNodeId, (node) =>
+          node.kind === 'group' ? { ...node, operator } : node,
+        ),
+      );
+      this.closeEditing();
+      return;
+    }
+    if (value === 'grp') {
+      const group = newGroup([]);
+      this.commit(insertChild(this.ast(), caret.contextNodeId, caret.insertIndex, group));
+      // Continue building the first condition inside the new parens.
+      this.editMode.set({
+        kind: 'pick-field',
+        caret: { index: 0, contextNodeId: group.id, insertIndex: 0 },
+        nodeId: null,
+      });
+    }
   }
 
   /** Toggle a group's NOT flag or its AND/OR operator inline (no popup). */
