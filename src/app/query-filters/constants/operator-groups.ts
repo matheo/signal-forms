@@ -26,9 +26,9 @@ const DEFAULT_OPERATORS = [...EQUALITY, ...TEXT, ...SET, ...PRESENCE];
 
 /** Resolve the type discriminator of a `FilterType` (its `type` or function `input`). */
 function typeKey(type: FilterDefinition['type']): string {
-  if ('fn' in type) {
+  if ('parameters' in type) {
     // Functions (coalesce / aggregates) behave like their input scalar type.
-    return type.input;
+    return type.parameters[0].types[0];
   }
   return type.type;
 }

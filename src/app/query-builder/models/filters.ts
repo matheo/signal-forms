@@ -1,7 +1,10 @@
 import { SelectOption } from './forms';
 
+export type FilterSimpleType = 'any' | 'boolean' | 'number' | 'string' | 'timestamp' | 'enum' | 'uuid';
+export type FilterComplexType = 'array' | 'map' | 'struct';
+
 export interface FilterDefinition {
-  field: string;
+  field: string; // column_name | 'coalesce' | 'floor' | 'count' | 'sum' | 'avg' | 'min' | 'max'
   hive_type: string;
   label: string;
   type: FilterType;
@@ -15,15 +18,14 @@ export type FilterType =
   | ArrayFilterType
   | MapFilterType
   | StructFilterType
-  | FunctionFilterType
-  | CoalesceFilterType;
+  | FunctionFilterType;
 
 export interface SimpleFilterType {
-  type: string;
+  type: FilterSimpleType;
 }
 
 export interface AutocompletableSimpleFilterType {
-  type: string;
+  type: FilterSimpleType;
   // Available options the user can select from.
   options?: SelectOption[];
   // Should the user input be restricted to the available options or is manual entry allowed.
@@ -42,7 +44,7 @@ export interface ArrayFilterType {
 }
 
 export interface MapFilterType {
-  type: string;
+  type: 'map';
   key_type: FilterType;
   value_type: FilterType;
 }
@@ -59,14 +61,8 @@ export interface StructFieldFilterType {
 }
 
 export interface FunctionFilterType {
-  fn: 'floor' | 'count' | 'sum' | 'avg' | 'min' | 'max';
-  input: 'number',
-}
-
-export interface CoalesceFilterType {
-  fn: 'coalesce';
-  input: 'boolean' | 'number' | 'string' | 'timestamp' | 'enum' | 'uuid';
-  field1: string;
-  field2: string;
-  value: string;
+  parameters: Array<{
+    name: 'term' | 'key'; // term=column_name | key=user_input
+    types: Array<FilterSimpleType | FilterComplexType | 'input'>;
+  }>;
 }

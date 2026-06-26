@@ -2,6 +2,91 @@ import { FilterDefinition } from './query-builder';
 
 export const filters: FilterDefinition[] = [
   {
+    "field": "count",
+    "label": "COUNT",
+    "hive_type": "function",
+    "type": {
+      "parameters": [
+        {
+          "name": "term",
+          "types": ["any"]
+        }
+      ]
+    }
+  },
+  {
+    "field": "floor",
+    "label": "FLOOR",
+    "hive_type": "function",
+    "type": {
+      "parameters": [
+        {
+          "name": "term",
+          "types": ["number"]
+        }
+      ]
+    }
+  },
+  {
+    "field": "elementat",
+    "label": "ELEMENT_AT",
+    "hive_type": "function",
+    "type": {
+      "parameters": [
+        {
+          "name": "term",
+          "types": ["array", "map"]
+        },
+        {
+          "name": "key",
+          "types": ["number", "string"]
+        }
+      ]
+    }
+  },
+  {
+    "field": "coalesce",
+    "label": "COALESCE",
+    "hive_type": "function",
+    "type": {
+      "parameters": [
+        {
+          "name": "term",
+          "types": ["any"]
+        },
+        {
+          "name": "term",
+          "types": ["input"]
+        },
+        {
+          "name": "key",
+          "types": ["input"]
+        }
+      ]
+    }
+  },
+  {
+    "field": "coalesce",
+    "label": "COALESCE",
+    "hive_type": "function",
+    "type": {
+      "parameters": [
+        {
+          "name": "term",
+          "types": ["any"],
+        },
+        {
+          "name": "term",
+          "types": ["input"],
+        },
+        {
+          "name": "key",
+          "types": ["input"],
+        }
+      ]
+    }
+  },
+  {
     "field": "agent_type",
     "label": "Agent Type",
     "type": {

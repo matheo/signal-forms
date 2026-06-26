@@ -111,7 +111,7 @@ export class QueryFilters {
     if (!filter) {
       return 'string';
     }
-    return 'fn' in filter.type ? filter.type.input : filter.type.type;
+    return 'parameters' in filter.type ? filter.type.parameters[0].types[0] : filter.type.type;
   });
 
   /** Booleans use a popup selector; everything else is typed inline in the bar. */
