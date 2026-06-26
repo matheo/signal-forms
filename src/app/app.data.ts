@@ -6,6 +6,7 @@ export const filters: FilterDefinition[] = [
     "label": "COUNT",
     "hive_type": "function",
     "type": {
+      "type": "function",
       "parameters": [
         {
           "name": "term",
@@ -19,6 +20,7 @@ export const filters: FilterDefinition[] = [
     "label": "FLOOR",
     "hive_type": "function",
     "type": {
+      "type": "function",
       "parameters": [
         {
           "name": "term",
@@ -32,6 +34,7 @@ export const filters: FilterDefinition[] = [
     "label": "ELEMENT_AT",
     "hive_type": "function",
     "type": {
+      "type": "function",
       "parameters": [
         {
           "name": "term",
@@ -49,27 +52,7 @@ export const filters: FilterDefinition[] = [
     "label": "COALESCE",
     "hive_type": "function",
     "type": {
-      "parameters": [
-        {
-          "name": "term",
-          "types": ["any"]
-        },
-        {
-          "name": "term",
-          "types": ["input"]
-        },
-        {
-          "name": "key",
-          "types": ["input"]
-        }
-      ]
-    }
-  },
-  {
-    "field": "coalesce",
-    "label": "COALESCE",
-    "hive_type": "function",
-    "type": {
+      "type": "function",
       "parameters": [
         {
           "name": "term",
@@ -103,14 +86,6 @@ export const filters: FilterDefinition[] = [
       ]
     },
     "hive_type": "enum"
-  },
-  {
-    "field": "agent_version",
-    "label": "Agent Version",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
   },
   {
     "field": "applications",
@@ -190,68 +165,12 @@ export const filters: FilterDefinition[] = [
     "hive_type": "int"
   },
   {
-    "field": "applications_interval",
-    "label": "Applications Interval",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "architecture",
-    "label": "Architecture",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "bios_manufacturer",
-    "label": "Bios Manufacturer",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "bios_name",
-    "label": "Bios Name",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "bios_serial_number",
-    "label": "Bios Serial Number",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "bios_version",
-    "label": "Bios Version",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
     "field": "build",
     "label": "Build",
     "type": {
       "type": "string"
     },
     "hive_type": "string"
-  },
-  {
-    "field": "build_minor",
-    "label": "Build Minor",
-    "type": {
-      "type": "number"
-    },
-    "hive_type": "int"
   },
   {
     "field": "bypass_s3_download",
@@ -262,28 +181,12 @@ export const filters: FilterDefinition[] = [
     "hive_type": "boolean"
   },
   {
-    "field": "changed_by",
-    "label": "Changed By",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
     "field": "changed_on",
     "label": "Changed On",
     "type": {
       "type": "timestamp"
     },
     "hive_type": "timestamp"
-  },
-  {
-    "field": "check_interval",
-    "label": "Check Interval",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
   },
   {
     "field": "cloned_from",
@@ -613,38 +516,6 @@ export const filters: FilterDefinition[] = [
     "hive_type": "struct<azure:struct<mac:string,private_ip:string,public_ip:string,subscription_id:string,az_environment:string,name:string,offer:string,location:string,osType:string,publisher:string,resource_id:string,resource_group_name:string,sku:string,version:string,vm_id:string,vm_size:string,tags:map<string,string>>,ec2:struct<account_id:string,availability_zone:string,image_id:string,instance_id:string,instance_type:string,ipv6:string,life_cycle:string,local_hostname:string,mac:string,placement_group_name:string,placement_host_id:string,placement_partition_number:string,private_dns_name:string,private_ip:string,public_dns_name:string,public_ip:string,region:string,reservation_id:string,vpc_id:string,security_groups:array<string>,subnets:array<string>,tags:map<string,string>>>"
   },
   {
-    "field": "config_set_id",
-    "label": "Config Set ID",
-    "type": {
-      "type": "uuid"
-    },
-    "hive_type": "uuid"
-  },
-  {
-    "field": "created_by",
-    "label": "Created By",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "created_on",
-    "label": "Created On",
-    "type": {
-      "type": "timestamp"
-    },
-    "hive_type": "timestamp"
-  },
-  {
-    "field": "cwa_machine_id",
-    "label": "Cwa Machine ID",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
     "field": "debug_enabled",
     "label": "Debug Enabled",
     "type": {
@@ -659,158 +530,6 @@ export const filters: FilterDefinition[] = [
       "type": "timestamp"
     },
     "hive_type": "timestamp"
-  },
-  {
-    "field": "description",
-    "label": "Description",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "display_version",
-    "label": "Display Version",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "domain",
-    "label": "Domain",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "entity_id",
-    "label": "Entity ID",
-    "type": {
-      "type": "uuid"
-    },
-    "hive_type": "uuid"
-  },
-  {
-    "field": "force_retry",
-    "label": "Force Retry",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "fqdn",
-    "label": "Fqdn",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "has_issues",
-    "label": "Has Issues",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "has_issues_since",
-    "label": "Has Issues Since",
-    "type": {
-      "type": "timestamp"
-    },
-    "hive_type": "timestamp"
-  },
-  {
-    "field": "has_unreachable",
-    "label": "Has Unreachable",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "hostname",
-    "label": "Hostname",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "is_snoozed",
-    "label": "Is Snoozed",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "is_snoozed_until",
-    "label": "Is Snoozed Until",
-    "type": {
-      "type": "timestamp"
-    },
-    "hive_type": "timestamp"
-  },
-  {
-    "field": "last_boot_up_time",
-    "label": "Last Boot Up Time",
-    "type": {
-      "type": "timestamp"
-    },
-    "hive_type": "timestamp"
-  },
-  {
-    "field": "last_check_in",
-    "label": "Last Check In",
-    "type": {
-      "type": "timestamp"
-    },
-    "hive_type": "timestamp"
-  },
-  {
-    "field": "machine_guid",
-    "label": "Machine Guid",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "machine_id",
-    "label": "Machine ID",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "major_version",
-    "label": "Major Version",
-    "type": {
-      "type": "number"
-    },
-    "hive_type": "int"
-  },
-  {
-    "field": "marked_for_uninstall",
-    "label": "Marked For Uninstall",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "minor_version",
-    "label": "Minor Version",
-    "type": {
-      "type": "number"
-    },
-    "hive_type": "int"
   },
   {
     "field": "monitor_state",
@@ -948,14 +667,6 @@ export const filters: FilterDefinition[] = [
       }
     },
     "hive_type": "map<enum,struct<enabled:boolean,monitor_interval:string,publish_interval:string,publish_logs_interval:string,publish_errors:boolean,min_error_publish_interval:string,min_retry_interval:string>>"
-  },
-  {
-    "field": "name",
-    "label": "Name",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
   },
   {
     "field": "network_interfaces",
@@ -1160,62 +871,6 @@ export const filters: FilterDefinition[] = [
     "hive_type": "array<struct<id:string,name:string,description:string,network_interface_type:string,physical_address:string,status:string,speed:int,ipv4:string,ipv6:string,dns_addresses:array<string>,dhcp_servers:array<string>,gateway_addresses:array<string>,dns_suffix:string,is_dns_enabled:boolean,is_dynamic_dns_enabled:boolean,network:struct<id:string,name:string,description:string,is_connected:boolean,is_connected_to_internet:boolean,connected_time:timestamp,created_time:timestamp,domain_type:string,connectivity:array<string>>>>"
   },
   {
-    "field": "network_interfaces_count",
-    "label": "Network Interfaces Count",
-    "type": {
-      "type": "number"
-    },
-    "hive_type": "int"
-  },
-  {
-    "field": "principal_user",
-    "label": "Principal User",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "processes_interval",
-    "label": "Processes Interval",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "product_name",
-    "label": "Product Name",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "publish_interval",
-    "label": "Publish Interval",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "registered_user",
-    "label": "Registered User",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "serial_number",
-    "label": "Serial Number",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
     "field": "services",
     "label": "Services",
     "type": {
@@ -1327,38 +982,6 @@ export const filters: FilterDefinition[] = [
       }
     },
     "hive_type": "array<struct<name:string,display_name:string,description:string,start_mode:string,status:string,state:string,process_id:int,process:struct<id:int,parent_id:int,creation_date:string,caption:string,executable_path:string,command_line:string>>>"
-  },
-  {
-    "field": "services_count",
-    "label": "Services Count",
-    "type": {
-      "type": "number"
-    },
-    "hive_type": "int"
-  },
-  {
-    "field": "services_interval",
-    "label": "Services Interval",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
-  },
-  {
-    "field": "silenced",
-    "label": "Silenced",
-    "type": {
-      "type": "boolean"
-    },
-    "hive_type": "boolean"
-  },
-  {
-    "field": "sm_bios_version",
-    "label": "Sm Bios Version",
-    "type": {
-      "type": "string"
-    },
-    "hive_type": "string"
   },
   {
     "field": "tags",
