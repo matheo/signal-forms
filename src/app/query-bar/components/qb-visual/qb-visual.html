@@ -1,0 +1,59 @@
+@let current = node();
+@switch (current.type) {
+  @case ('logical') {
+    @let logical = asLogical(current);
+    <span class="qb-visual__row">
+      @for (operand of logical.operands; track $index) {
+        @if (!$first) {
+          <span class="chip chip--logical">{{ logical.operator === 'and' ? 'AND' : 'OR' }}</span>
+        }
+        <app-qb-visual [node]="operand" />
+      }
+    </span>
+  }
+  @case ('not') {
+    @let notNode = asNot(current);
+    <span class="qb-visual__row">
+      <span class="chip chip--not">NOT</span>
+      <app-qb-visual [node]="notNode.operand" />
+    </span>
+  }
+  @case ('group') {
+    @let group = asGroup(current);
+    <span class="qb-visual__row">
+      <span class="punct">(</span>
+      <app-qb-visual [node]="group.operand" />
+      <span class="punct">)</span>
+    </span>
+  }
+  @case ('condition') {
+    @let condition = asCondition(current);
+    <span class="chip chip--condition">
+      <span class="chip__field">{{ condition.field }}</span>
+      <span class="chip__operator">{{ operatorLabel(condition.operator) }}</span>
+      @for (value of conditionValues(condition); track $index) {
+        <span class="chip__value">{{ value }}</span>
+      }
+      <button type="button" class="chip__remove" (click)="remove(current)" aria-label="Remove">
+        ×
+      </button>
+    </span>
+  }
+  @case ('function') {
+    @let fn = asFunction(current);
+    <span class="chip chip--condition">
+      <span class="chip__field">{{ fn.name }}</span
+      ><span class="punct">(</span>
+      @for (arg of fn.args; track $index) {
+        @if (!$first) {
+          <span class="punct">,</span>
+        }
+        <span class="chip__value">{{ argText(arg) }}</span>
+      }
+      <span class="punct">)</span>
+      <button type="button" class="chip__remove" (click)="remove(current)" aria-label="Remove">
+        ×
+      </button>
+    </span>
+  }
+}

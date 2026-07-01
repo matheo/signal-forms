@@ -1,0 +1,31 @@
+<div class="qb">
+  <div class="qb__bar">
+    <div class="qb__field">
+      @if (mode() === 'text') {
+        <app-qb-editor />
+      } @else if (ast(); as root) {
+        <app-qb-visual [node]="root" />
+      } @else {
+        <span class="qb__placeholder">Empty query</span>
+      }
+    </div>
+
+    <mat-button-toggle-group
+      class="qb__modes"
+      hideSingleSelectionIndicator
+      [value]="mode()"
+      (change)="setMode($event.value)"
+    >
+      <mat-button-toggle value="visual" [disabled]="!isParseable()">Visual</mat-button-toggle>
+      <mat-button-toggle value="text">Text</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (errors().length) {
+    <ul class="qb__errors">
+      @for (error of errors(); track $index) {
+        <li class="qb__error">{{ error.message }}</li>
+      }
+    </ul>
+  }
+</div>

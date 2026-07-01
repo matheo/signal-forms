@@ -1,0 +1,70 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+
+.qb-visual__row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.punct {
+  opacity: 0.7;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+
+  &--condition {
+    background: rgba(148, 163, 184, 0.14);
+  }
+  &--logical {
+    color: var(--op-color);
+    font-weight: 600;
+  }
+  &--not {
+    color: var(--not-color);
+    font-weight: 600;
+  }
+}
+
+.chip__field {
+  color: var(--identifier-color);
+}
+.chip__operator {
+  color: var(--operator-color);
+}
+.chip__value {
+  color: var(--value-color);
+}
+
+.chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: 0.5;
+  cursor: pointer;
+  line-height: 1;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(148, 163, 184, 0.25);
+  }
+}

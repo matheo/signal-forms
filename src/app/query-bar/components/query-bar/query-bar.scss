@@ -1,0 +1,53 @@
+:host {
+  // Syntax-highlight palette — inherits down to the editor's injected spans
+  // and the visual chips (CSS custom properties cross view-encapsulation).
+  --identifier-color: #93c5fd;
+  --operator-color: #ca8a04;
+  --op-color: #f9a8d4;
+  --not-color: #fcd34d;
+  --value-color: #86efac;
+
+  display: block;
+}
+
+.qb__bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.qb__field {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+
+  app-qb-editor {
+    flex: 1 1 auto;
+  }
+}
+
+.qb__placeholder {
+  opacity: 0.4;
+  font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+
+.qb__modes {
+  flex: 0 0 auto;
+}
+
+.qb__errors {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.qb__error {
+  color: #f87171;
+  font-size: 0.8rem;
+}

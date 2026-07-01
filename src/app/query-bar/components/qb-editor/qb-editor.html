@@ -1,0 +1,12 @@
+<div
+  #editable
+  class="qb-editor__input"
+  contenteditable="true"
+  spellcheck="false"
+  role="textbox"
+  aria-label="Query editor"
+  data-placeholder="Type a query…"
+  (input)="onInput()"
+  (compositionend)="onInput()"
+  (keydown.enter)="$event.preventDefault()"
+></div>
