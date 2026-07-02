@@ -3,6 +3,7 @@
     "Autocompletable",
     "lparen",
     "punct",
-    "rparen"
+    "rparen",
+    "tinyint"
   ]
 }
