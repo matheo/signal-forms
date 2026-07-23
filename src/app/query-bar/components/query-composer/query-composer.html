@@ -1,0 +1,47 @@
+<!--
+  The five section editors share the container's CatalogStore. Each
+  <app-query-editor> owns its own highlighting, suggestions and blur-gated
+  errors; the container adds the cross-section group-by gap warning and the
+  live assembled-payload preview.
+-->
+<div class="composer">
+  <section class="section">
+    <label class="section__label">Where</label>
+    <app-query-editor profile="where" placeholder="e.g. status = 'active' AND severity >= 3" [(value)]="where" />
+  </section>
+
+  <section class="section">
+    <label class="section__label">Select</label>
+    <app-query-editor profile="select" placeholder="columns and functions, e.g. count(*) as total" [(value)]="select" />
+  </section>
+
+  <section class="section">
+    <label class="section__label">Group By</label>
+    <app-query-editor profile="groupby" placeholder="grouping columns" [(value)]="groupBy" />
+    @if (groupByGaps().length) {
+      <p class="section__warn">
+        Non-aggregate select column(s) not in group-by:
+        @for (c of groupByGaps(); track c) {
+          <code>{{ c }}</code>
+        }
+      </p>
+    }
+  </section>
+
+  <section class="section" [class.section--disabled]="!havingEnabled()">
+    <label class="section__label">
+      Having @if (!havingEnabled()) { <span class="section__hint">(requires group-by)</span> }
+    </label>
+    <app-query-editor
+      profile="having"
+      placeholder="aggregate conditions, e.g. count(*) > 10"
+      [disabled]="!havingEnabled()"
+      [(value)]="having"
+    />
+  </section>
+
+  <section class="section">
+    <label class="section__label">Order By</label>
+    <app-query-editor profile="orderby" placeholder="e.g. created_at desc, name asc" [(value)]="orderBy" />
+  </section>
+</div>

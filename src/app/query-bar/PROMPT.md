@@ -57,3 +57,5 @@ Output AST: (Provide the JSON structure that represents this expression)
 
 === WORKFLOW ===
 Please do not write the entire application at once. First, output the TypeScript AST interfaces. Then, let's review them before you proceed to the Parser, State Service, and Components.
+
+Inline chip editing — click a value/operator chip to edit it (currently chips support removal + full text editing; value/operator editing in-place is the next increment).

@@ -1,0 +1,61 @@
+<!--
+  The editor surface: a contenteditable whose innerHTML is rebuilt imperatively
+  from the analyzer tokens (see query-editor.ts). Angular does not bind its
+  content — it only wires events — so control flow here covers the caret-anchored
+  suggestion dropdown and the blur-gated error line.
+-->
+<div
+  #ce
+  class="qe empty"
+  role="textbox"
+  aria-multiline="false"
+  [attr.contenteditable]="disabled() ? 'false' : 'true'"
+  [class.disabled]="disabled()"
+  [attr.data-ph]="placeholder()"
+  spellcheck="false"
+  (input)="onInput()"
+  (keydown)="onKeydown($event)"
+  (keyup)="onKeyup($event)"
+  (mouseup)="onMouseup()"
+  (focus)="onFocus()"
+  (blur)="onBlur()"
+  (paste)="onPaste($event)"
+></div>
+
+@if (errors().length) {
+  <div class="qe-err">⚠ {{ errors().join('  ·  ') }}</div>
+}
+
+@if (sugData(); as sug) {
+  <div class="sug" [style.left.px]="sugPos().left" [style.top.px]="sugPos().top">
+    @if (sug.desc) {
+      <div class="desc">{{ sug.desc }}</div>
+    }
+    @for (group of sug.groups; track $index; let gi = $index) {
+      <div class="grp">{{ group.label }}</div>
+      @for (item of group.items; track $index; let ii = $index) {
+        <div
+          class="opt"
+          [class.sel]="sugSelected() === flatIndex(gi, ii)"
+          (mouseenter)="sugSelected.set(flatIndex(gi, ii))"
+          (mousedown)="$event.preventDefault(); pick(item)"
+        >
+          @if (item.kind === 'operator') {
+            <span class="sym">{{ item.label }}</span>
+          } @else {
+            <span class="lbl">{{ item.label }}</span>
+          }
+          @if (item.output) {
+            <span class="sub">→ {{ item.output }}</span>
+          }
+          @if (item.badge) {
+            <span class="sub">{{ item.badge }}</span>
+          }
+          @if (item.sublabel) {
+            <code>{{ item.sublabel }}</code>
+          }
+        </div>
+      }
+    }
+  </div>
+}

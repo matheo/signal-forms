@@ -1,0 +1,202 @@
+:host {
+  display: block;
+  position: relative;
+
+  // Theme-agnostic palette: neutrals derive from currentColor; accents are fixed
+  // hues that read on both light and dark Material surfaces.
+  --qe-border: color-mix(in srgb, currentColor 20%, transparent);
+  --qe-muted: color-mix(in srgb, currentColor 55%, transparent);
+  --qe-soft: color-mix(in srgb, currentColor 8%, transparent);
+  --qe-accent: #4c8dff;
+  --qe-accent-soft: color-mix(in srgb, #4c8dff 22%, transparent);
+  --qe-danger: #e0575b;
+  --qe-danger-soft: color-mix(in srgb, #e0575b 20%, transparent);
+  --qe-group: #b98bdc;
+  --qe-string: #4caf7d;
+  --qe-number: #d9915a;
+}
+
+/* ---- the freeform editor ---- */
+.qe {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--qe-border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  outline: 0;
+  font:
+    14px/1.9 ui-monospace,
+    'SF Mono',
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  &:focus {
+    border-color: var(--qe-accent);
+    box-shadow: 0 0 0 3px var(--qe-accent-soft);
+  }
+
+  &.empty::before {
+    content: attr(data-ph);
+    color: var(--qe-muted);
+    pointer-events: none;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+/* inline chip = a styled run of the real text (still editable in place) */
+.chip {
+  margin: 0 1px;
+  padding: 1px 5px;
+  border: 1px dashed var(--qe-group);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--qe-group) 10%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* validity styling applies only after focus is lost (.validated gate) */
+.qe.validated .chip.invalid {
+  border-style: solid;
+  border-color: var(--qe-danger);
+  background: color-mix(in srgb, var(--qe-danger) 10%, transparent);
+}
+
+/* ---- token roles ---- */
+.t-field {
+  font-weight: 600;
+}
+.qe.validated .t-field.unknown {
+  color: var(--qe-danger);
+  text-decoration: underline wavy var(--qe-danger);
+}
+.t-func {
+  color: var(--qe-accent);
+  font-weight: 700;
+}
+.t-op {
+  color: var(--qe-accent);
+  font-weight: 600;
+}
+.t-str {
+  color: var(--qe-string);
+}
+.t-num {
+  color: var(--qe-number);
+}
+.t-bare,
+.t-val {
+  color: inherit;
+}
+.t-kw {
+  color: var(--qe-group);
+  font-weight: 800;
+} /* AND / OR / NOT */
+.t-paren {
+  color: var(--qe-group);
+  font-weight: 800;
+}
+.t-comma {
+  color: var(--qe-muted);
+}
+.t-bad {
+  color: var(--qe-muted);
+}
+.qe.validated .t-bad {
+  padding: 0 4px;
+  border: 1px solid var(--qe-danger);
+  border-radius: 6px;
+  color: var(--qe-danger);
+  text-decoration: underline wavy var(--qe-danger);
+}
+.t-alias {
+  color: var(--qe-muted);
+  font-style: italic;
+}
+.t-dir {
+  color: var(--qe-accent);
+  font-weight: 700;
+}
+
+/* ---- blur-gated error line ---- */
+.qe-err {
+  margin-top: 0.35rem;
+  color: var(--qe-danger);
+  font-size: 0.8rem;
+}
+
+/* ---- caret-anchored suggestion dropdown ---- */
+.sug {
+  position: fixed;
+  z-index: 60;
+  min-width: 210px;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--qe-border);
+  border-radius: 9px;
+  background: var(--mat-sys-surface-container, Canvas);
+  color: var(--mat-sys-on-surface, CanvasText);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+
+  .desc {
+    padding: 4px 11px 8px;
+    border-bottom: 1px solid var(--qe-border);
+    color: var(--qe-muted);
+    font-size: 11.5px;
+    white-space: pre-wrap;
+  }
+
+  .grp {
+    position: sticky;
+    top: 0;
+    padding: 5px 11px 3px;
+    background: inherit;
+    color: var(--qe-muted);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .opt {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 11px;
+    cursor: pointer;
+
+    &.sel {
+      background: var(--qe-accent-soft);
+    }
+
+    .lbl {
+      flex: 1;
+      white-space: nowrap;
+    }
+    .sym {
+      flex: 1;
+      color: var(--qe-accent);
+      font-family: ui-monospace, Consolas, monospace;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .sub {
+      color: var(--qe-muted);
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+    code {
+      color: var(--qe-muted);
+      font-size: 11.5px;
+    }
+  }
+}

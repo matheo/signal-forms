@@ -1,0 +1,2649 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Query Filter UI Prototype (freeform)</title>
+    <style>
+      :root {
+        --bg: #f5f7fa;
+        --panel: #ffffff;
+        --panel-2: #f0f3f7;
+        --border: #d5dbe3;
+        --text: #1b2532;
+        --muted: #697382;
+        --accent: #2563eb;
+        --accent-soft: #dce8ff;
+        --chip: #eef2f7;
+        --danger: #c02617;
+        --danger-soft: #fdecea;
+        --ok: #15803d;
+        --group: #7cb0ff;
+        --k-scalar: #0e7490;
+        --k-aggregate: #9d174d;
+        --k-analytic: #6d28d9;
+        --t-string: #0e7490;
+        --t-number: #7c3aed;
+        --t-ip: #b45309;
+        --t-timestamp: #15803d;
+        --t-date: #0f766e;
+        --t-boolean: #be185d;
+        --t-map: #4338ca;
+        --t-array: #a16207;
+        --t-uuid: #334155;
+        --t-struct: #0369a1;
+        --t-union: #7c2d12;
+        --t-enum: #065f46;
+        --t-any: #475569;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f141b;
+          --panel: #171e27;
+          --panel-2: #1d2732;
+          --border: #2c3846;
+          --text: #e6ebf2;
+          --muted: #8c99a9;
+          --accent: #5c9dff;
+          --accent-soft: #1d3a5f;
+          --chip: #232e3a;
+          --danger: #f4776b;
+          --danger-soft: #3a1f1c;
+          --ok: #4ade80;
+          --group: #3f6fb5;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.45 system-ui,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      code {
+        font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+      }
+      header {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      header h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 650;
+      }
+      header .sub {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .connect {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-left: auto;
+      }
+      .connect input {
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 5px 8px;
+        font: inherit;
+        font-size: 12.5px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(440px, 1fr) minmax(340px, 500px);
+        gap: 16px;
+        padding: 16px 20px;
+        max-width: 1560px;
+        align-items: start;
+      }
+      @media (max-width: 1000px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      h2 {
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 9px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h2 .hint {
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+        font-size: 11.5px;
+      }
+      .btn {
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12.5px;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .btn.small {
+        padding: 2px 8px;
+        font-size: 12px;
+      }
+
+      /* ---- the freeform editor (contenteditable) ---- */
+      .qe {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 42px;
+        padding: 9px 11px;
+        outline: 0;
+        font:
+          14px/1.9 ui-monospace,
+          'SF Mono',
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+      .qe:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .qe.empty:before {
+        content: attr(data-ph);
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .qe.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      /* inline chip = a styled run of the REAL text (still editable in place) */
+      .chip {
+        border: 1px dashed var(--group);
+        border-radius: 6px;
+        padding: 1px 5px;
+        margin: 0 1px;
+        background: color-mix(in srgb, var(--group) 9%, transparent);
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      /* validation styling is gated on .qe.validated — applied only after focus is lost */
+      .qe.validated .chip.invalid {
+        border-style: solid;
+        border-color: var(--danger);
+        background: color-mix(in srgb, var(--danger) 9%, transparent);
+      }
+      /* hover glow + delete: box-shadow + fixed overlay = never triggers a re-layout */
+      .chip:hover {
+        position: relative;
+        z-index: 5;
+        box-shadow:
+          0 0 0 2px var(--accent-soft),
+          0 3px 12px color-mix(in srgb, var(--accent) 32%, transparent);
+      }
+      .qe.validated .chip.invalid:hover {
+        box-shadow:
+          0 0 0 2px var(--danger-soft),
+          0 3px 12px color-mix(in srgb, var(--danger) 32%, transparent);
+      }
+      .chip-del {
+        position: fixed;
+        z-index: 80;
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        line-height: 15px;
+        text-align: center;
+        border-radius: 50%;
+        border: 1px solid var(--danger);
+        background: var(--panel);
+        color: var(--danger);
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+        display: none;
+      }
+      .chip-del:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+      .t-field {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .qe.validated .t-field.unknown {
+        color: var(--danger);
+        text-decoration: underline wavy var(--danger);
+      }
+      .t-func {
+        color: var(--k-scalar);
+        font-weight: 700;
+      }
+      .t-op {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .t-str {
+        color: var(--t-string);
+      }
+      .t-num {
+        color: var(--t-number);
+      }
+      .t-bare,
+      .t-val {
+        color: var(--text);
+      }
+      .t-kw {
+        color: var(--k-aggregate);
+        font-weight: 800;
+      } /* AND / OR / NOT */
+      .t-paren {
+        color: var(--group);
+        font-weight: 800;
+      }
+      .t-comma {
+        color: var(--muted);
+      }
+      .t-bad {
+        color: var(--muted);
+      }
+      .qe.validated .t-bad {
+        color: var(--danger);
+        border: 1px solid var(--danger);
+        border-radius: 6px;
+        padding: 0 4px;
+        text-decoration: underline wavy var(--danger);
+      }
+      .t-alias {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .t-dir {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* ---- caret-anchored suggestion dropdown ---- */
+      .sug {
+        position: fixed;
+        z-index: 60;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+        max-height: 260px;
+        overflow: auto;
+        min-width: 210px;
+        font:
+          13px/1.4 system-ui,
+          sans-serif;
+      }
+      .sug .grp {
+        padding: 5px 11px 3px;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted);
+        position: sticky;
+        top: 0;
+        background: var(--panel);
+      }
+      .sug .opt {
+        padding: 6px 11px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .sug .opt.sel,
+      .sug .opt:hover {
+        background: var(--accent-soft);
+      }
+      .sug .opt .lbl {
+        flex: 1;
+        white-space: nowrap;
+      }
+      .sug .opt .sym {
+        font-family: ui-monospace, Consolas, monospace;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .sug .opt .sub {
+        color: var(--muted);
+        font-size: 11.5px;
+        white-space: nowrap;
+      }
+      .sug .opt code {
+        color: var(--muted);
+        font-size: 11.5px;
+      }
+      .sug .desc {
+        padding: 2px 11px 8px;
+        color: var(--muted);
+        font-size: 11.5px;
+        border-bottom: 1px solid var(--border);
+        white-space: pre-wrap;
+      }
+      .sug .empty {
+        padding: 8px 11px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .badge {
+        font-size: 9.5px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        padding: 1px 6px;
+        border-radius: 999px;
+        color: #fff;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .kind-badge.scalar {
+        background: var(--k-scalar);
+      }
+      .kind-badge.aggregate {
+        background: var(--k-aggregate);
+      }
+      .kind-badge.analytic {
+        background: var(--k-analytic);
+      }
+      .t-b-string {
+        background: var(--t-string);
+      }
+      .t-b-number {
+        background: var(--t-number);
+      }
+      .t-b-ip {
+        background: var(--t-ip);
+      }
+      .t-b-timestamp {
+        background: var(--t-timestamp);
+      }
+      .t-b-date {
+        background: var(--t-date);
+      }
+      .t-b-boolean {
+        background: var(--t-boolean);
+      }
+      .t-b-map {
+        background: var(--t-map);
+      }
+      .t-b-array {
+        background: var(--t-array);
+      }
+      .t-b-uuid {
+        background: var(--t-uuid);
+      }
+      .t-b-struct {
+        background: var(--t-struct);
+      }
+      .t-b-union {
+        background: var(--t-union);
+      }
+      .t-b-enum {
+        background: var(--t-enum);
+      }
+      .t-b-any {
+        background: var(--t-any);
+      }
+      .t-b-binary {
+        background: #64748b;
+      }
+
+      .warn {
+        color: var(--danger);
+        font-size: 12.5px;
+        margin-top: 8px;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 7px;
+      }
+      .note code,
+      .warn code {
+        background: var(--panel-2);
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+      .errline {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 6px;
+      }
+
+      aside .head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      aside .head h2 {
+        margin: 0;
+      }
+      pre {
+        margin: 0;
+        font:
+          12px/1.55 ui-monospace,
+          Consolas,
+          monospace;
+        white-space: pre;
+        overflow: auto;
+        max-height: 76vh;
+        background: var(--panel-2);
+        border-radius: 8px;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Query Filter UI <span class="sub">— freeform</span></h1>
+      <span class="sub"
+        >type it &rarr; live <code>QueryDefinition</code> JSON &middot; source:
+        <b id="src">embedded &middot; demo_logs</b></span
+      >
+      <span class="connect">
+        <input id="cx-base" placeholder="https://host/api" size="22" />
+        <input id="cx-token" placeholder="bearer token" size="16" />
+        <input id="cx-table" placeholder="table id" size="12" />
+        <button class="btn" id="cx-go" title="Fetch live filter-schema / functions / operators (needs CORS)">
+          Connect
+        </button>
+      </span>
+    </header>
+    <main>
+      <div>
+        <section id="sec-where">
+          <h2>
+            Where
+            <span class="hint"
+              >&mdash; e.g. <code>lower(event.action) = 'delete' AND source.ip in cidr 10.0.0.0/8</code></span
+            >
+          </h2>
+          <div class="qe" id="where-ed" data-ph="field operator value  —  type AND / OR / ( ) to combine"></div>
+          <div class="errline" id="where-err"></div>
+        </section>
+
+        <section id="sec-select">
+          <h2>
+            Select <span class="hint">&mdash; comma separated, e.g. <code>event.category, count(*) as cnt</code></span>
+          </h2>
+          <div class="qe" id="select-ed" data-ph="column or function [as alias], …"></div>
+          <div class="errline" id="select-err"></div>
+        </section>
+
+        <section id="sec-groupby">
+          <h2>Group by <span class="hint">&mdash; columns, comma separated</span></h2>
+          <div class="qe" id="groupby-ed" data-ph="column, …"></div>
+          <div class="warn" id="groupby-warn" hidden></div>
+        </section>
+
+        <section id="sec-having">
+          <h2>
+            Having
+            <span class="hint">&mdash; aggregate LHS only, e.g. <code>count(*) &gt; 10</code>; needs a group-by</span>
+          </h2>
+          <div class="qe" id="having-ed" data-ph="aggregate operator value, e.g. count(*) > 10"></div>
+          <div class="errline" id="having-err"></div>
+          <div class="note" id="having-note"></div>
+        </section>
+
+        <section id="sec-orderby">
+          <h2>
+            Order by <span class="hint">&mdash; <code>column</code> or <code>column:desc</code>, comma separated</span>
+          </h2>
+          <div class="qe" id="orderby-ed" data-ph="column[:asc|desc], …"></div>
+          <div class="errline" id="orderby-err"></div>
+          <div class="note">Select aliases are not resolvable here &mdash; order by real columns.</div>
+        </section>
+      </div>
+
+      <aside>
+        <section>
+          <div class="head">
+            <h2>QueryDefinition payload</h2>
+            <button class="btn small" id="copy-json" style="margin-left: auto">Copy</button>
+          </div>
+          <pre id="out">{}</pre>
+        </section>
+      </aside>
+    </main>
+
+    <script>
+      'use strict';
+      /* =========================================================================
+       * Freeform query filter UI — self-contained, no dependencies.
+       *
+       * ONE editor component (QueryEditor) drives every section. It is a syntax-
+       * highlighting contenteditable: the user types plain text, recognized
+       * comparisons render as inline chips (styled runs of the real, still-editable
+       * text), a caret-anchored dropdown suggests the next token, and the valid
+       * parse is serialized to QueryDefinition JSON on every keystroke. Invalid
+       * comparisons are flagged and excluded from the payload.
+       *
+       * profiles: where | having (boolean grammar) · select | groupby | orderby (list grammar)
+       * ========================================================================= */
+
+      const el = (tag, props, kids) => {
+        const n = document.createElement(tag);
+        if (props)
+          for (const k in props) {
+            if (k === 'class') n.className = props[k];
+            else if (k === 'html') n.innerHTML = props[k];
+            else if (k.startsWith('on') && typeof props[k] === 'function') n.addEventListener(k.slice(2), props[k]);
+            else if (props[k] != null && props[k] !== false) n.setAttribute(k, props[k]);
+          }
+        for (const c of [].concat(kids || []))
+          if (c != null && c !== false) n.appendChild(c.nodeType ? c : document.createTextNode(String(c)));
+        return n;
+      };
+      const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const stripQuotes = (s) => (/^(['"]).*\1$/.test(s) ? s.slice(1, -1) : s);
+      const isDirPrefix = (w) => {
+        w = w.toLowerCase();
+        return !!w && ('asc'.startsWith(w) || 'desc'.startsWith(w));
+      };
+
+      /* =========================================================================
+       * Type bridging + operator tables
+       * ========================================================================= */
+      const CLASS_TO_GENERIC = {
+        decimal: 'number',
+        double: 'number',
+        float: 'number',
+        tinyint: 'number',
+        int: 'number',
+        long: 'number',
+        smallint: 'number',
+        literal_int: 'number',
+        literal_numeric: 'number',
+        string: 'string',
+        literal_string: 'string',
+        bool: 'boolean',
+        boolean: 'boolean',
+        date: 'date',
+        timestamp: 'timestamp',
+        ip: 'ip',
+        uuid: 'uuid',
+        enum: 'enum',
+        array: 'array',
+        map: 'map',
+        struct: 'struct',
+        union: 'union',
+        binary: 'binary',
+        any: 'any',
+      };
+      const toGeneric = (t) => CLASS_TO_GENERIC[t] || t;
+      const acceptedGenerics = (param) =>
+        new Set((Array.isArray(param.types) ? param.types : [param.types]).map(toGeneric));
+
+      /* canonical operator -> the single display form shown in the dropdown */
+      const OP_DISPLAY = {
+        equal: '=',
+        not_equal: '≠',
+        greater_than: '>',
+        greater_than_or_equal: '≥',
+        less_than: '<',
+        less_than_or_equal: '≤',
+        is_in: 'in',
+        is_not_in: 'not in',
+        is_empty: 'is empty',
+        is_not_empty: 'is not empty',
+        starts_with: 'starts with',
+        ends_with: 'ends with',
+        contains: 'contains',
+        like: 'like',
+        regexp: 'regexp',
+        is_in_cidr: 'in cidr',
+        is_not_in_cidr: 'not in cidr',
+        has_key: 'has key',
+        has_value: 'has value',
+        any_match: 'any match',
+        all_match: 'all match',
+      };
+      /* every spelling the parser accepts -> canonical (display forms + canonical names + symbol variants) */
+      const OP_TABLE = (() => {
+        const t = [];
+        for (const [canon, disp] of Object.entries(OP_DISPLAY)) {
+          t.push([disp, canon]);
+          if (canon !== disp) t.push([canon, canon]);
+        }
+        [
+          ['==', 'equal'],
+          ['eq', 'equal'],
+          ['!=', 'not_equal'],
+          ['<>', 'not_equal'],
+          ['ne', 'not_equal'],
+          ['>=', 'greater_than_or_equal'],
+          ['<=', 'less_than_or_equal'],
+          ['gte', 'greater_than_or_equal'],
+          ['gt', 'greater_than'],
+          ['lte', 'less_than_or_equal'],
+          ['lt', 'less_than'],
+        ].forEach((x) => t.push(x));
+        return t.sort((a, b) => b[0].length - a[0].length);
+      })();
+      const NO_VALUE_OPS = new Set(['is_empty', 'is_not_empty']);
+      const LIST_OPS = new Set(['is_in', 'is_not_in']);
+      const CIDR_OPS = new Set(['is_in_cidr', 'is_not_in_cidr']);
+      const CONTAINER_OPS = new Set(['any_match', 'all_match', 'has_key', 'has_value', 'contains']);
+      const CIDR_RE = /^([0-9]{1,3}\.){3}[0-9]{1,3}\/([0-9]|[12][0-9]|3[0-2])$/;
+
+      /* match an operator at the start of `rest`; word ops need a trailing boundary */
+      function matchOperator(rest) {
+        const low = rest.toLowerCase();
+        for (const [spell, canon] of OP_TABLE) {
+          if (low.startsWith(spell)) {
+            if (/[a-z]$/.test(spell)) {
+              const nx = rest[spell.length];
+              if (nx && /[A-Za-z0-9_]/.test(nx)) continue;
+            }
+            return { text: rest.slice(0, spell.length), canon };
+          }
+        }
+        return null;
+      }
+
+      /* =========================================================================
+       * Catalog — the three static data sources
+       * ========================================================================= */
+      const Catalog = {
+        fields: [],
+        functions: [],
+        operators: {},
+        setFields(l) {
+          this.fields = l;
+        },
+        setFunctions(l) {
+          this.functions = l;
+        },
+        setOperators(l) {
+          this.operators = {};
+          l.forEach((o) => (this.operators[o.type] = o.operators));
+        },
+        opsFor(g) {
+          return this.operators[g] || [];
+        },
+        fieldByName(n) {
+          return this.fields.find((f) => f.field === n);
+        },
+        filterableFields() {
+          return this.fields.filter((f) => this.opsFor(f.type.type).length > 0);
+        },
+        fnByName(n) {
+          return this.functions.find((f) => f.name === n);
+        },
+        fnsByKind(k) {
+          return this.functions.filter((f) => f.kind === k);
+        },
+        outputGeneric(fn) {
+          return toGeneric(Array.isArray(fn.output.types) ? fn.output.types[0] : fn.output.types);
+        },
+      };
+      const paramAt = (fn, i) =>
+        i < fn.parameters.length
+          ? fn.parameters[i]
+          : fn.parameters.length && fn.parameters[fn.parameters.length - 1].maxRepeat === null
+            ? fn.parameters[fn.parameters.length - 1]
+            : null;
+      const isVariadic = (fn) => fn.parameters.length > 0 && fn.parameters[fn.parameters.length - 1].maxRepeat === null;
+      function typeOfNode(node) {
+        if (!node) return 'any';
+        if (node.t === 'col') {
+          const f = Catalog.fieldByName(node.name);
+          return f ? f.type.type : 'any';
+        }
+        if (node.t === 'fn') return node.fn ? Catalog.outputGeneric(node.fn) : 'any';
+        if (node.t === 'lit') return node.litType === 'number' ? 'number' : node.litType === 'star' ? 'any' : 'string';
+        return 'any';
+      }
+      const containerTypeOf = (node) => {
+        if (node && node.t === 'col') {
+          const f = Catalog.fieldByName(node.name);
+          if (f && ['array', 'map', 'struct', 'union'].includes(f.type.type)) return f.type;
+        }
+        return null;
+      };
+
+      /* =========================================================================
+       * Expression lexer: one column | function(nested args…) | literal, with spans
+       * ========================================================================= */
+      function lexExpr(s, i) {
+        const m = /^[A-Za-z_@][A-Za-z0-9_.]*/.exec(s.slice(i));
+        if (!m) return null;
+        const name = m[0];
+        const nameEnd = i + name.length;
+        let k = nameEnd;
+        while (s[k] === ' ') k++;
+        if (s[k] === '(') {
+          // function call
+          const fn = Catalog.fnByName(name);
+          const toks = [{ start: i, end: nameEnd, role: 'func', text: name }];
+          if (k > nameEnd) toks.push({ start: nameEnd, end: k, role: 'ws', text: s.slice(nameEnd, k) });
+          toks.push({ start: k, end: k + 1, role: 'paren', text: '(' });
+          let p = k + 1;
+          const args = [];
+          while (p < s.length) {
+            while (s[p] === ' ') {
+              toks.push({ start: p, end: p + 1, role: 'ws', text: ' ' });
+              p++;
+            }
+            if (s[p] === ')') {
+              toks.push({ start: p, end: p + 1, role: 'paren', text: ')' });
+              p++;
+              break;
+            }
+            const arg = lexArg(s, p);
+            if (!arg) {
+              toks.push({ start: p, end: p + 1, role: 'bad', text: s[p] || '' });
+              p++;
+            } else {
+              args.push(arg.node);
+              arg.tokens.forEach((t) => toks.push(t));
+              p = arg.end;
+            }
+            while (s[p] === ' ') {
+              toks.push({ start: p, end: p + 1, role: 'ws', text: ' ' });
+              p++;
+            }
+            if (s[p] === ',') {
+              toks.push({ start: p, end: p + 1, role: 'comma', text: ',' });
+              p++;
+              continue;
+            }
+            if (s[p] === ')') {
+              toks.push({ start: p, end: p + 1, role: 'paren', text: ')' });
+              p++;
+              break;
+            }
+            if (p >= s.length) break;
+            if (s[p] !== ',') {
+              toks.push({ start: p, end: p + 1, role: 'bad', text: s[p] });
+              p++;
+            }
+          }
+          return { end: p, node: { t: 'fn', fn: fn || null, name, args }, tokens: toks };
+        }
+        const known = !!Catalog.fieldByName(name);
+        return {
+          end: nameEnd,
+          node: { t: 'col', name, known },
+          tokens: [{ start: i, end: nameEnd, role: 'field', text: name, known }],
+        };
+      }
+      function lexArg(s, i) {
+        const c = s[i];
+        if (c === "'" || c === '"') {
+          let j = i + 1,
+            v = '';
+          while (j < s.length && s[j] !== c) {
+            if (s[j] === '\\') j++;
+            v += s[j];
+            j++;
+          }
+          j++;
+          return {
+            end: j,
+            node: { t: 'lit', value: v, litType: 'string' },
+            tokens: [{ start: i, end: j, role: 'str', text: s.slice(i, j) }],
+          };
+        }
+        if (c === '*')
+          return {
+            end: i + 1,
+            node: { t: 'lit', value: '*', litType: 'star' },
+            tokens: [{ start: i, end: i + 1, role: 'bare', text: '*' }],
+          };
+        if (/[0-9]/.test(c) || (c === '-' && /[0-9]/.test(s[i + 1] || ''))) {
+          const m = /^-?[0-9.]+/.exec(s.slice(i));
+          return {
+            end: i + m[0].length,
+            node: { t: 'lit', value: Number(m[0]), litType: 'number' },
+            tokens: [{ start: i, end: i + m[0].length, role: 'num', text: m[0] }],
+          };
+        }
+        return lexExpr(s, i);
+      }
+      /* value tokens after an operator */
+      function lexValue(s, i, canon) {
+        let j = i;
+        if (LIST_OPS.has(canon)) {
+          let depth = 0;
+          while (j < s.length) {
+            const c = s[j];
+            if (c === '[') {
+              depth++;
+              j++;
+              continue;
+            }
+            if (c === ']') {
+              depth--;
+              j++;
+              continue;
+            }
+            if (c === "'" || c === '"') {
+              const q = c;
+              j++;
+              while (j < s.length && s[j] !== q) {
+                if (s[j] === '\\') j++;
+                j++;
+              }
+              j++;
+              continue;
+            }
+            if (depth <= 0) {
+              if (c === ')') break;
+              if (/^\s+(and|or)\b/i.test(s.slice(j))) break;
+            }
+            j++;
+          }
+          const raw = s.slice(i, j);
+          return { end: j, raw, tokens: raw.trim() ? [{ start: i, end: j, role: 'val', text: raw }] : [] };
+        }
+        const c = s[i];
+        if (c === "'" || c === '"') {
+          let k = i + 1;
+          while (k < s.length && s[k] !== c) {
+            if (s[k] === '\\') k++;
+            k++;
+          }
+          k++;
+          return { end: k, raw: s.slice(i, k), tokens: [{ start: i, end: k, role: 'str', text: s.slice(i, k) }] };
+        }
+        const m = /^[^\s()]+/.exec(s.slice(i));
+        if (!m) return { end: i, raw: '', tokens: [] };
+        const role = /^-?[0-9.]+$/.test(m[0]) ? 'num' : 'bare';
+        return { end: i + m[0].length, raw: m[0], tokens: [{ start: i, end: i + m[0].length, role, text: m[0] }] };
+      }
+      /* coerce a raw value substring to the typed value for op/lhsType */
+      function coerceValue(canon, lhsType, raw) {
+        if (NO_VALUE_OPS.has(canon)) return null;
+        raw = raw.trim();
+        if (LIST_OPS.has(canon))
+          return raw
+            .replace(/^\[|\]$/g, '')
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+            .map((x) => (lhsType === 'number' ? Number(stripQuotes(x)) : stripQuotes(x)));
+        if (lhsType === 'number') return Number(stripQuotes(raw));
+        if (lhsType === 'boolean') return /^'?true'?$/i.test(raw);
+        return stripQuotes(raw);
+      }
+
+      /* =========================================================================
+       * Boolean analyzer (WHERE / HAVING): tokens + comparison leaves + tree
+       * ========================================================================= */
+      function analyzeBoolean(s, mode) {
+        const tokens = [],
+          items = [],
+          compById = {};
+        let i = 0,
+          expect = 'LHS',
+          cur = null,
+          cid = 0;
+        const N = s.length;
+        const pushWs = () => {
+          tokens.push({ start: i, end: i + 1, role: 'ws', text: s[i], compId: cur ? cur.cid : undefined });
+          i++;
+        };
+        const flush = () => {
+          if (!cur) return;
+          finalizeComp(cur, mode);
+          compById[cur.cid] = cur;
+          items.push({ k: 'leaf', comp: cur });
+          cur = null;
+        };
+
+        while (i < N) {
+          if (s[i] === ' ') {
+            pushWs();
+            continue;
+          }
+          const rest = s.slice(i);
+          if (expect === 'LHS') {
+            let m;
+            if ((m = /^not\b/i.exec(rest))) {
+              tokens.push({ start: i, end: i + m[0].length, role: 'kw', text: m[0] });
+              items.push({ k: 'not' });
+              i += m[0].length;
+              continue;
+            }
+            if (s[i] === '(') {
+              tokens.push({ start: i, end: i + 1, role: 'paren', text: '(' });
+              items.push({ k: '(' });
+              i++;
+              continue;
+            }
+            if (s[i] === ')') {
+              tokens.push({ start: i, end: i + 1, role: 'paren', text: ')' });
+              items.push({ k: ')' });
+              i++;
+              continue;
+            }
+            if ((m = /^(and|or)\b/i.exec(rest))) {
+              tokens.push({ start: i, end: i + m[0].length, role: 'bad', text: m[0] });
+              i += m[0].length;
+              continue;
+            }
+            const ex = lexExpr(s, i);
+            if (!ex) {
+              tokens.push({ start: i, end: i + 1, role: 'bad', text: s[i] });
+              i++;
+              continue;
+            }
+            cur = { cid: ++cid, lhs: ex.node, op: null, opCanon: null, raw: '', start: i };
+            ex.tokens.forEach((t) => {
+              t.compId = cur.cid;
+              tokens.push(t);
+            });
+            i = ex.end;
+            expect = 'OP';
+            continue;
+          }
+          if (expect === 'OP') {
+            const op = matchOperator(rest);
+            if (!op) {
+              flush();
+              expect = 'JOIN';
+              continue;
+            } // no operator yet -> leaf incomplete
+            const tok = { start: i, end: i + op.text.length, role: 'op', text: op.text, compId: cur.cid };
+            tokens.push(tok);
+            cur.op = op.text;
+            cur.opCanon = op.canon;
+            i += op.text.length;
+            if (NO_VALUE_OPS.has(op.canon)) {
+              flush();
+              expect = 'JOIN';
+            } else expect = 'VALUE';
+            continue;
+          }
+          if (expect === 'VALUE') {
+            const v = lexValue(s, i, cur.opCanon);
+            v.tokens.forEach((t) => {
+              t.compId = cur.cid;
+              tokens.push(t);
+            });
+            cur.raw = v.raw;
+            i = v.end;
+            flush();
+            expect = 'JOIN';
+            continue;
+          }
+          if (expect === 'JOIN') {
+            let m;
+            if ((m = /^(and|or)\b/i.exec(rest))) {
+              tokens.push({ start: i, end: i + m[0].length, role: 'kw', text: m[0] });
+              items.push({ k: m[0].toLowerCase() });
+              i += m[0].length;
+              expect = 'LHS';
+              continue;
+            }
+            if (s[i] === ')') {
+              tokens.push({ start: i, end: i + 1, role: 'paren', text: ')' });
+              items.push({ k: ')' });
+              i++;
+              continue;
+            }
+            const bm = /^\S+/.exec(rest);
+            const bt = bm ? bm[0] : s[i]; // only AND/OR (or close-paren) valid here
+            tokens.push({ start: i, end: i + bt.length, role: 'bad', text: bt });
+            i += bt.length;
+            continue;
+          }
+        }
+        flush();
+        const tree = parseItems(items);
+        return { tokens, compById, tree };
+      }
+      function finalizeComp(comp, mode) {
+        comp.valid = false;
+        comp.reason = '';
+        const lhs = comp.lhs;
+        if (lhs.t === 'col' && !lhs.known) {
+          comp.reason = "unknown field '" + lhs.name + "'";
+          return;
+        }
+        if (lhs.t === 'fn' && !lhs.fn) {
+          comp.reason = 'unknown function';
+          return;
+        }
+        if (mode === 'where' && lhs.t === 'fn' && lhs.fn.kind === 'aggregate') {
+          comp.reason = 'aggregate not allowed in WHERE — use Having';
+          return;
+        }
+        if (mode === 'having' && !(lhs.t === 'fn' && lhs.fn.kind === 'aggregate')) {
+          comp.reason = 'Having needs an aggregate (e.g. count(*))';
+          return;
+        }
+        const container = containerTypeOf(lhs);
+        const lhsType = container ? container.type : typeOfNode(lhs);
+        comp.lhsType = lhsType;
+        if (!comp.opCanon) {
+          comp.reason = 'missing operator';
+          return;
+        }
+        const ops = Catalog.opsFor(lhsType);
+        if (ops.length && !ops.includes(comp.opCanon)) {
+          comp.reason = "'" + (OP_DISPLAY[comp.opCanon] || comp.opCanon) + "' not valid for " + lhsType;
+          return;
+        }
+        if (NO_VALUE_OPS.has(comp.opCanon)) {
+          comp.value = null;
+          comp.valid = true;
+          return;
+        }
+        if ((comp.raw || '').trim() === '') {
+          comp.reason = 'missing value';
+          return;
+        }
+        if (container) {
+          const cv = containerValue(container, comp.opCanon, comp.raw);
+          if (!cv.ok) {
+            comp.reason = cv.reason;
+            return;
+          }
+          comp.value = cv.value;
+          comp.valid = true;
+          return;
+        }
+        const val = coerceValue(comp.opCanon, lhsType, comp.raw);
+        if (lhsType === 'number' && typeof val === 'number' && isNaN(val)) {
+          comp.reason = 'expected a number';
+          return;
+        }
+        if (CIDR_OPS.has(comp.opCanon) && !CIDR_RE.test(String(val))) {
+          comp.reason = 'invalid CIDR (e.g. 10.0.0.0/8)';
+          return;
+        }
+        comp.value = val;
+        comp.valid = true;
+      }
+      /* freeform container value -> documented shape (limited: single inner value, 'equal') */
+      function containerValue(ct, op, raw) {
+        const k = ct.type;
+        if (k === 'array' && op === 'contains')
+          return { ok: true, value: coerceValue('equal', ct.element_type.type, raw) };
+        if (k === 'array')
+          return { ok: true, value: { operator: 'equal', value: coerceValue('equal', ct.element_type.type, raw) } };
+        if (k === 'map' && op === 'has_key')
+          return { ok: true, value: { operator: 'equal', value: coerceValue('equal', ct.key_type.type, raw) } };
+        if (k === 'map' && op === 'has_value')
+          return { ok: true, value: { operator: 'equal', value: coerceValue('equal', ct.value_type.type, raw) } };
+        return {
+          ok: false,
+          reason: k + " '" + (OP_DISPLAY[op] || op) + "' needs the structured editor (out of scope for freeform)",
+        };
+      }
+      function parseItems(items) {
+        let p = 0;
+        const flat = (op, n) => (n.t === op && !n.not ? n.kids : [n]);
+        function parseOr() {
+          let n = parseAnd();
+          while (items[p] && items[p].k === 'or') {
+            p++;
+            const r = parseAnd();
+            n = { t: 'or', not: false, kids: flat('or', n).concat(flat('or', r)) };
+          }
+          return n;
+        }
+        function parseAnd() {
+          let n = parseNot();
+          while (items[p] && items[p].k === 'and') {
+            p++;
+            const r = parseNot();
+            n = { t: 'and', not: false, kids: flat('and', n).concat(flat('and', r)) };
+          }
+          return n;
+        }
+        function parseNot() {
+          if (items[p] && items[p].k === 'not') {
+            p++;
+            return { t: 'not', kid: parseFactor() };
+          }
+          return parseFactor();
+        }
+        function parseFactor() {
+          if (items[p] && items[p].k === '(') {
+            p++;
+            const n = parseOr();
+            if (items[p] && items[p].k === ')') p++;
+            return { t: 'group', kid: n };
+          }
+          if (items[p] && items[p].k === 'leaf') {
+            const c = items[p];
+            p++;
+            return { t: 'leaf', comp: c.comp };
+          }
+          p++;
+          return { t: 'empty' };
+        }
+        if (!items.length) return { t: 'empty' };
+        return parseOr();
+      }
+      function serializeArg(node) {
+        if (node.t === 'col') return node.name;
+        if (node.t === 'lit') return node.value;
+        if (node.t === 'fn') return { type: 'function', name: node.name, args: node.args.map(serializeArg) };
+        return null;
+      }
+      const leafField = (comp, mode) =>
+        comp.lhs.t === 'col'
+          ? comp.lhs.name
+          : {
+              type: mode === 'having' ? 'agg_function' : 'function',
+              name: comp.lhs.name,
+              args: comp.lhs.args.map(serializeArg),
+            };
+      function toWhere(node) {
+        if (!node || node.t === 'empty') return null;
+        if (node.t === 'leaf')
+          return node.comp.valid
+            ? { field: leafField(node.comp, 'where'), operator: node.comp.opCanon, value: node.comp.value }
+            : null;
+        if (node.t === 'group') return toWhere(node.kid);
+        if (node.t === 'not') {
+          const inner = toWhere(node.kid);
+          if (!inner) return null;
+          if (inner.condition) return Object.assign({}, inner, { not: !inner.not });
+          return { condition: 'and', not: true, rules: [inner] };
+        }
+        const rules = node.kids.map(toWhere).filter(Boolean);
+        if (!rules.length) return null;
+        if (rules.length === 1) return rules[0];
+        return { condition: node.t, not: false, rules };
+      }
+      function toHaving(node) {
+        if (!node || node.t === 'empty') return null;
+        if (node.t === 'leaf')
+          return node.comp.valid
+            ? { field: leafField(node.comp, 'having'), operator: node.comp.opCanon, value: node.comp.value }
+            : null;
+        if (node.t === 'group') return toHaving(node.kid);
+        if (node.t === 'not') return toHaving(node.kid);
+        const expressions = node.kids.map(toHaving).filter(Boolean);
+        if (!expressions.length) return null;
+        if (expressions.length === 1) return expressions[0];
+        return { operator: node.t, expressions };
+      }
+      function whereErrors(an) {
+        return Object.values(an.compById)
+          .filter((c) => !c.valid && c.reason)
+          .map((c) => c.reason);
+      }
+
+      /* =========================================================================
+       * List analyzer (SELECT / GROUP BY / ORDER BY)
+       * ========================================================================= */
+      function analyzeList(s, kind) {
+        const tokens = [],
+          items = [];
+        let i = 0,
+          cid = 0;
+        const N = s.length;
+        while (i < N) {
+          if (s[i] === ' ') {
+            tokens.push({ start: i, end: i + 1, role: 'ws', text: ' ' });
+            i++;
+            continue;
+          }
+          if (s[i] === ',') {
+            tokens.push({ start: i, end: i + 1, role: 'comma', text: ',' });
+            i++;
+            continue;
+          }
+          const item = { cid: ++cid, start: i, valid: false, reason: '' };
+          if (kind === 'orderby') {
+            const m = /^[A-Za-z_@][A-Za-z0-9_.]*/.exec(s.slice(i));
+            if (!m) {
+              tokens.push({ start: i, end: i + 1, role: 'bad', text: s[i] });
+              i++;
+              continue;
+            }
+            const name = m[0];
+            let j = i + name.length;
+            const known = !!Catalog.fieldByName(name);
+            tokens.push({ start: i, end: j, role: 'field', text: name, known, compId: item.cid });
+            let dir = 'asc';
+            if (s[j] === ':') {
+              const dm = /^:(asc|desc)/i.exec(s.slice(j));
+              if (dm) {
+                tokens.push({ start: j, end: j + dm[0].length, role: 'dir', text: dm[0], compId: item.cid });
+                dir = dm[1].toLowerCase();
+                j += dm[0].length;
+              } else {
+                tokens.push({ start: j, end: j + 1, role: 'bad', text: ':' });
+                j++;
+              }
+            } else {
+              // "field dir" — a trailing word that is a prefix of asc/desc stays in this chip; anything else is the next column
+              let p = j;
+              while (s[p] === ' ') p++;
+              if (p > j) {
+                const wm = /^[A-Za-z]+/.exec(s.slice(p));
+                if (wm && isDirPrefix(wm[0])) {
+                  tokens.push({ start: j, end: p, role: 'ws', text: s.slice(j, p), compId: item.cid });
+                  tokens.push({ start: p, end: p + wm[0].length, role: 'dir', text: wm[0], compId: item.cid });
+                  dir = /^(asc|desc)$/i.test(wm[0]) ? wm[0].toLowerCase() : 'asc';
+                  j = p + wm[0].length;
+                }
+              }
+            }
+            item.name = name;
+            item.direction = dir;
+            item.valid = known;
+            item.reason = known ? '' : 'unknown field';
+            item.node = { t: 'col', name };
+            i = j;
+            items.push(item);
+            continue;
+          }
+          const ex = lexExpr(s, i);
+          if (!ex) {
+            tokens.push({ start: i, end: i + 1, role: 'bad', text: s[i] });
+            i++;
+            continue;
+          }
+          ex.tokens.forEach((t) => {
+            t.compId = item.cid;
+            tokens.push(t);
+          });
+          item.node = ex.node;
+          i = ex.end;
+          if (kind === 'select') {
+            // optional  as alias
+            let k = i;
+            while (s[k] === ' ') k++;
+            const am = /^as\s+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*)/i.exec(s.slice(k));
+            if (am) {
+              if (k > i) tokens.push({ start: i, end: k, role: 'ws', text: s.slice(i, k), compId: item.cid });
+              tokens.push({ start: k, end: k + am[0].length, role: 'alias', text: am[0], compId: item.cid });
+              item.alias = stripQuotes(am[1]);
+              i = k + am[0].length;
+            }
+          }
+          validateListItem(item, kind);
+          items.push(item);
+        }
+        const compById = {};
+        items.forEach((it) => (compById[it.cid] = it));
+        return { tokens, items, compById };
+      }
+      function validateListItem(item, kind) {
+        const n = item.node;
+        if (n.t === 'col' && !n.known) {
+          item.reason = 'unknown field';
+          return;
+        }
+        if (n.t === 'fn' && !n.fn) {
+          item.reason = 'unknown function';
+          return;
+        }
+        if (kind === 'groupby' && n.t !== 'col') {
+          item.reason = 'group-by takes columns only';
+          return;
+        }
+        item.valid = true;
+      }
+      function serializeSelectItem(item) {
+        const n = item.node;
+        if (n.t === 'col') return item.alias ? { type: 'column', name: n.name, alias: item.alias } : n.name;
+        const o = {
+          type: n.fn && n.fn.kind === 'analytic' ? 'window_function' : 'function',
+          name: n.name,
+          args: n.args.map(serializeArg),
+        };
+        if (item.alias) o.alias = item.alias;
+        return o;
+      }
+      function serializeList(an, kind) {
+        const good = an.items.filter((it) => it.valid);
+        if (kind === 'select') return good.map(serializeSelectItem);
+        if (kind === 'groupby') return good.map((it) => it.node.name);
+        return good.map((it) => ({ column: it.name, direction: it.direction }));
+      }
+
+      /* =========================================================================
+       * Highlighter — tokens -> HTML (inline chips = styled real text)
+       * ========================================================================= */
+      const ROLE_CLASS = {
+        field: 't-field',
+        func: 't-func',
+        op: 't-op',
+        str: 't-str',
+        num: 't-num',
+        bare: 't-bare',
+        val: 't-val',
+        kw: 't-kw',
+        paren: 't-paren',
+        comma: 't-comma',
+        bad: 't-bad',
+        alias: 't-alias',
+        dir: 't-dir',
+        ws: '',
+      };
+      function tokenHtml(tk) {
+        let cls = ROLE_CLASS[tk.role] || '';
+        if (tk.role === 'field' && tk.known === false) cls += ' unknown';
+        return cls ? `<span class="${cls}">${esc(tk.text)}</span>` : esc(tk.text);
+      }
+      function highlight(tokens, compById) {
+        let html = '',
+          n = 0;
+        while (n < tokens.length) {
+          const cid = tokens[n].compId;
+          if (cid == null) {
+            html += tokenHtml(tokens[n]);
+            n++;
+            continue;
+          }
+          let m = n;
+          while (m < tokens.length && tokens[m].compId === cid) m++;
+          const run = tokens.slice(n, m),
+            c = compById ? compById[cid] : null;
+          const bad = c ? !c.valid : false,
+            s = run[0].start,
+            e = run[run.length - 1].end;
+          html += `<span class="chip${bad ? ' invalid' : ''}" data-s="${s}" data-e="${e}"${c && c.reason ? ` title="${esc(c.reason)}"` : ''}>`;
+          for (const tk of run) html += tokenHtml(tk);
+          html += '</span>';
+          n = m;
+        }
+        return html;
+      }
+
+      /* =========================================================================
+       * Caret helpers for the contenteditable
+       * ========================================================================= */
+      function getText(ce) {
+        return ce.textContent.replace(/ /g, ' ');
+      }
+      function getCaret(ce) {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return 0;
+        const r = sel.getRangeAt(0);
+        if (!ce.contains(r.endContainer)) return getText(ce).length;
+        const pre = r.cloneRange();
+        pre.selectNodeContents(ce);
+        pre.setEnd(r.endContainer, r.endOffset);
+        return pre.toString().length;
+      }
+      function setCaret(ce, offset) {
+        const walk = document.createTreeWalker(ce, NodeFilter.SHOW_TEXT);
+        let node = null,
+          rem = offset,
+          n;
+        while ((n = walk.nextNode())) {
+          const len = n.textContent.length;
+          if (rem <= len) {
+            node = n;
+            break;
+          }
+          rem -= len;
+        }
+        const sel = window.getSelection(),
+          r = document.createRange();
+        if (node) r.setStart(node, Math.max(0, Math.min(rem, node.textContent.length)));
+        else {
+          r.selectNodeContents(ce);
+          r.collapse(false);
+        }
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+      function caretRect() {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return null;
+        const r = sel.getRangeAt(0).cloneRange();
+        r.collapse(true);
+        let rect = r.getClientRects()[0];
+        if (!rect) {
+          const s = document.createElement('span');
+          s.textContent = '​';
+          r.insertNode(s);
+          rect = s.getBoundingClientRect();
+          s.remove();
+        }
+        return rect;
+      }
+
+      /* =========================================================================
+       * Suggestion context (what to suggest at the caret)
+       * ========================================================================= */
+      function caretFnContext(text, caret) {
+        // is the caret inside a function call's args?
+        const s = text.slice(0, caret);
+        const stack = [];
+        let i = 0;
+        while (i < s.length) {
+          const ch = s[i];
+          if (ch === "'" || ch === '"') {
+            const q = ch;
+            i++;
+            while (i < s.length && s[i] !== q) {
+              if (s[i] === '\\') i++;
+              i++;
+            }
+            i++;
+            continue;
+          }
+          if (ch === '(') {
+            let j = i - 1;
+            while (j >= 0 && /\s/.test(s[j])) j--;
+            let e = j;
+            while (j >= 0 && /[A-Za-z0-9_]/.test(s[j])) j--;
+            stack.push({ fnName: s.slice(j + 1, e + 1), argIndex: 0 });
+            i++;
+            continue;
+          }
+          if (ch === ')') {
+            stack.pop();
+            i++;
+            continue;
+          }
+          if (ch === ',' && stack.length) {
+            stack[stack.length - 1].argIndex++;
+            i++;
+            continue;
+          }
+          i++;
+        }
+        for (let k = stack.length - 1; k >= 0; k--)
+          if (stack[k].fnName && Catalog.fnByName(stack[k].fnName)) return stack[k];
+        return null;
+      }
+      function boolContext(prefix, mode) {
+        // role expected at end of prefix (ignores function internals)
+        let i = 0,
+          expect = 'LHS',
+          lhs = null;
+        const N = prefix.length;
+        const s = prefix;
+        while (i < N) {
+          if (s[i] === ' ') {
+            i++;
+            continue;
+          }
+          const rest = s.slice(i);
+          if (expect === 'LHS') {
+            let m;
+            if ((m = /^not\b/i.exec(rest))) {
+              i += m[0].length;
+              continue;
+            }
+            if (s[i] === '(' || s[i] === ')') {
+              i++;
+              continue;
+            }
+            if ((m = /^(and|or)\b/i.exec(rest))) {
+              i += m[0].length;
+              continue;
+            }
+            const ex = lexExpr(s, i);
+            if (!ex) {
+              i++;
+              continue;
+            }
+            lhs = ex.node;
+            i = ex.end;
+            expect = 'OP';
+            continue;
+          }
+          if (expect === 'OP') {
+            const op = matchOperator(rest);
+            if (!op) break;
+            i += op.text.length;
+            if (NO_VALUE_OPS.has(op.canon)) {
+              expect = 'JOIN';
+              lhs = null;
+            } else expect = 'VALUE';
+            continue;
+          }
+          if (expect === 'VALUE') {
+            const v = lexValue(s, i, 'equal');
+            i = v.end;
+            expect = 'JOIN';
+            lhs = null;
+            continue;
+          }
+          if (expect === 'JOIN') {
+            let m;
+            if ((m = /^(and|or)\b/i.exec(rest))) {
+              i += m[0].length;
+              expect = 'LHS';
+              lhs = null;
+              continue;
+            }
+            if (s[i] === ')') {
+              i++;
+              continue;
+            }
+            break;
+          }
+        }
+        const container = containerTypeOf(lhs);
+        const lhsType = container ? container.type : typeOfNode(lhs);
+        if (expect === 'OP') return { role: 'op', lhsType, frag: (/[A-Za-z<>=!≤≥≠_]*$/.exec(prefix) || [''])[0] };
+        if (expect === 'VALUE') return { role: 'value', lhsType, frag: (/[^\s()]*$/.exec(prefix) || [''])[0] };
+        if (expect === 'JOIN') return { role: 'join', frag: '' };
+        return { role: 'lhs', frag: (/[A-Za-z0-9_.@]*$/.exec(prefix) || [''])[0] };
+      }
+      function suggestFor(text, caret, profile) {
+        const prefix = text.slice(0, caret);
+        const frag0 = (/[A-Za-z0-9_.@]*$/.exec(prefix) || [''])[0];
+        const fnCtx = caretFnContext(text, caret);
+        if (fnCtx) return argSuggestions(fnCtx.fnName, fnCtx.argIndex, frag0);
+        if (profile === 'where' || profile === 'having') return boolSuggestions(boolContext(prefix, profile), profile);
+        if (profile === 'orderby') {
+          const seg = prefix.split(',').pop();
+          const dm = /[A-Za-z_@][A-Za-z0-9_.]*\s+([A-Za-z]*)$/.exec(seg); // typing a direction right after a column?
+          if (dm && !seg.includes(':')) {
+            const f = dm[1].toLowerCase(),
+              dirs = ['asc', 'desc'].filter((d) => d.startsWith(f));
+            if (dirs.length)
+              return {
+                frag: dm[1],
+                groups: [
+                  {
+                    label: 'direction',
+                    items: dirs.map((d) => ({ insert: d + ' ', render: () => [el('span', { class: 'sym' }, [d])] })),
+                  },
+                ],
+              };
+          }
+          return { frag: frag0, groups: [colGroup(Catalog.fields, frag0)] };
+        }
+        const cols = profile === 'groupby' ? Catalog.filterableFields() : Catalog.fields;
+        const fns = profile === 'groupby' ? [] : Catalog.functions;
+        return { frag: frag0, groups: [fnGroup(fns, frag0), colGroup(cols, frag0)] };
+      }
+      function boolSuggestions(ctx, profile) {
+        if (ctx.role === 'op') {
+          const ops = Catalog.opsFor(ctx.lhsType).length ? Catalog.opsFor(ctx.lhsType) : Catalog.opsFor('any');
+          const f = ctx.frag.toLowerCase();
+          const items = ops
+            .map((o) => ({ display: OP_DISPLAY[o] || o, canon: o }))
+            .filter((o) => !f || o.display.toLowerCase().startsWith(f) || o.canon.startsWith(f))
+            .map((o) => ({
+              insert: o.display + ' ',
+              render: () => [el('span', { class: 'sym' }, [o.display]), el('span', { class: 'sub' }, [o.canon])],
+            }));
+          return { frag: ctx.frag, groups: [{ label: 'operators · ' + ctx.lhsType, items }] };
+        }
+        if (ctx.role === 'join') return { frag: '', groups: [] }; // user types AND / OR themselves
+        if (ctx.role === 'value') {
+          if (ctx.lhsType === 'boolean')
+            return { frag: ctx.frag, groups: [{ label: 'value', items: ['true', 'false'].map((v) => litOpt(v)) }] };
+          return { frag: ctx.frag, groups: [] }; // value autocomplete deferred
+        }
+        const f = ctx.frag.toLowerCase();
+        const cols = profile === 'having' ? [] : Catalog.filterableFields();
+        const fns = profile === 'having' ? Catalog.fnsByKind('aggregate') : Catalog.fnsByKind('scalar');
+        return { frag: ctx.frag, groups: [fnGroup(fns, f), colGroup(cols, f)] };
+      }
+      function argSuggestions(fnName, argIndex, frag) {
+        const fn = Catalog.fnByName(fnName);
+        if (!fn) return { frag, groups: [] };
+        const param = paramAt(fn, argIndex);
+        if (!param) return { frag, groups: [{ label: 'no more parameters', items: [] }] };
+        const acc = acceptedGenerics(param);
+        const f = frag.toLowerCase();
+        const cols = Catalog.fields.filter((c) => acc.has('any') || acc.has(toGeneric(c.type.type)));
+        const fns = Catalog.functions.filter(
+          (fn2) => fn2.kind === 'scalar' && (acc.has('any') || acc.has(Catalog.outputGeneric(fn2))),
+        );
+        const groups = [fnGroup(fns, f), colGroup(cols, f)];
+        if (fnName === 'count' && argIndex === 0) groups.unshift({ label: 'literal', items: [litOpt('*')] });
+        return { frag, groups, desc: fn.description };
+      }
+      const kw = (w) => ({ insert: w + ' ', render: () => [el('span', { class: 'sym' }, [w])] });
+      const litOpt = (v) => ({
+        insert: v + ' ',
+        render: () => [el('span', { class: 'lbl' }, [v]), el('span', { class: 'sub' }, ['literal'])],
+      });
+      function fnGroup(fns, f) {
+        return {
+          label: 'functions',
+          items: fns
+            .filter((fn) => fn.name.toLowerCase().includes(f))
+            .map((fn) => ({
+              insert: fn.name + '()',
+              caretBack: 1,
+              desc: fn.description,
+              render: () => [
+                el('span', { class: 'kind-badge badge ' + fn.kind }, [fn.kind[0]]),
+                el('span', { class: 'lbl' }, [fn.name]),
+                el('code', null, ['→ ' + Catalog.outputGeneric(fn)]),
+              ],
+            })),
+        };
+      }
+      function colGroup(cols, f) {
+        return {
+          label: 'columns',
+          items: cols
+            .filter((c) => c.field.toLowerCase().includes(f) || c.label.toLowerCase().includes(f))
+            .map((c) => ({
+              insert: c.field,
+              render: () => [
+                el('span', { class: 'lbl' }, [c.label]),
+                el('span', { class: 'sub' }, [c.field]),
+                el('span', { class: 'badge t-b-' + c.type.type, title: c.type.type }, [c.type.type]),
+              ],
+            })),
+        };
+      }
+
+      /* =========================================================================
+       * QueryEditor — the reused contenteditable component
+       * ========================================================================= */
+      function QueryEditor(hostId, profile, onChange) {
+        const ce = document.getElementById(hostId);
+        ce.setAttribute('contenteditable', 'true');
+        ce.setAttribute('spellcheck', 'false');
+        const errEl = document.getElementById(hostId.replace('-ed', '-err'));
+        let text = '',
+          sug = null,
+          sugItems = [],
+          sugSel = 0,
+          validated = false;
+
+        const analyze = () =>
+          profile === 'where' || profile === 'having' ? analyzeBoolean(text, profile) : analyzeList(text, profile);
+        const errorsFor = (an) =>
+          profile === 'where' || profile === 'having'
+            ? whereErrors(an)
+            : an.items.filter((x) => !x.valid && x.reason).map((x) => x.reason);
+        function setErrLine(an) {
+          if (errEl) {
+            const u = [...new Set(errorsFor(an))];
+            errEl.textContent = u.length ? '⚠ ' + u.join('  ·  ') : '';
+          }
+        }
+
+        function rerender(caret) {
+          const an = analyze();
+          ce.innerHTML = highlight(an.tokens, an.compById || null);
+          ce.classList.toggle('empty', text.length === 0);
+          if (caret != null) setCaret(ce, caret);
+          return an;
+        }
+        function emit(an) {
+          if (onChange) onChange(an);
+        }
+
+        // validation shows only after focus is lost (assume the user completes each chip correctly while typing)
+        function onInput() {
+          validated = false;
+          ce.classList.remove('validated');
+          const caret = getCaret(ce);
+          text = getText(ce);
+          emit(rerender(caret));
+          showSuggest();
+        }
+        function replaceFrag(fragLen, insert, caretBack) {
+          const caret = getCaret(ce),
+            start = caret - fragLen;
+          text = text.slice(0, start) + insert + text.slice(caret);
+          emit(rerender(start + insert.length - (caretBack || 0)));
+          showSuggest();
+        }
+
+        /* ---- suggestion dropdown (anchored at caret, left-aligned; editor-left when empty) ---- */
+        function closeSug() {
+          if (sug) {
+            sug.remove();
+            sug = null;
+          }
+          sugItems = [];
+        }
+        function showSuggest() {
+          const data = suggestFor(text, getCaret(ce), profile);
+          const groups = (data.groups || []).filter((g) => g.items.length);
+          closeSug();
+          if (!groups.length) return;
+          sug = el('div', { class: 'sug' });
+          sugItems = [];
+          if (data.desc) sug.appendChild(el('div', { class: 'desc' }, [data.desc]));
+          groups.forEach((g) => {
+            sug.appendChild(el('div', { class: 'grp' }, [g.label || '']));
+            g.items.forEach((it) => {
+              const row = el('div', { class: 'opt' }, it.render());
+              row.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                pick(it);
+              });
+              row.addEventListener('mouseenter', () => setSel(sugItems.indexOf(row)));
+              sug.appendChild(row);
+              sugItems.push(row);
+              row._it = it;
+            });
+          });
+          document.body.appendChild(sug);
+          const box = ce.getBoundingClientRect(),
+            rect = text.length ? caretRect() : null;
+          let left = rect ? rect.left : box.left + 8,
+            top = rect ? rect.bottom : box.bottom;
+          left = Math.max(box.left, Math.min(left, window.innerWidth - 262));
+          sug.style.left = left + 'px';
+          sug.style.top = top + 4 + 'px';
+          sugSel = 0;
+          setSel(0);
+        }
+        function setSel(i) {
+          sugItems.forEach((r) => r.classList.remove('sel'));
+          if (i >= 0 && i < sugItems.length) {
+            sugSel = i;
+            sugItems[i].classList.add('sel');
+            sugItems[i].scrollIntoView({ block: 'nearest' });
+          }
+        }
+        function moveSel(d) {
+          if (sugItems.length) setSel((sugSel + d + sugItems.length) % sugItems.length);
+        }
+        function pick(it) {
+          const frag = suggestFor(text, getCaret(ce), profile).frag || '';
+          closeSug();
+          replaceFrag(frag.length, it.insert, it.caretBack || 0);
+          ce.focus();
+        }
+
+        /* ---- hover a chip: glow (CSS) + floating × delete (fixed overlay, no re-layout) ---- */
+        const del = el('button', { class: 'chip-del', type: 'button' }, ['×']);
+        document.body.appendChild(del);
+        let delRange = null,
+          overDel = false;
+        function showDel(chip) {
+          const r = chip.getBoundingClientRect();
+          del.style.display = 'block';
+          del.style.left = r.right - 8 + 'px';
+          del.style.top = r.top - 9 + 'px';
+          delRange = { s: +chip.dataset.s, e: +chip.dataset.e };
+        }
+        ce.addEventListener('mouseover', (e) => {
+          const chip = e.target.closest && e.target.closest('.chip');
+          if (chip && ce.contains(chip)) showDel(chip);
+        });
+        ce.addEventListener('mouseleave', () =>
+          setTimeout(() => {
+            if (!overDel) del.style.display = 'none';
+          }, 60),
+        );
+        del.addEventListener('mouseenter', () => {
+          overDel = true;
+        });
+        del.addEventListener('mouseleave', () => {
+          overDel = false;
+          del.style.display = 'none';
+        });
+        del.addEventListener('mousedown', (e) => e.preventDefault()); // keep editor focused
+        del.addEventListener('click', () => {
+          if (delRange) deleteRange(delRange.s, delRange.e);
+          overDel = false;
+          del.style.display = 'none';
+        });
+        function deleteRange(s, e) {
+          let ns = s,
+            ne = e;
+          const before = text.slice(0, s),
+            after = text.slice(e);
+          if (profile === 'where' || profile === 'having') {
+            const am = /^\s*(?:and|or)\b/i.exec(after);
+            if (am) ne = e + am[0].length;
+            else {
+              const bm = /\b(?:and|or)\s*$/i.exec(before);
+              if (bm) ns = bm.index;
+            }
+          } else {
+            const am = /^\s*,/.exec(after);
+            if (am) ne = e + am[0].length;
+            else {
+              const bm = /,\s*$/.exec(before);
+              if (bm) ns = bm.index;
+            }
+          }
+          const L = text.slice(0, ns).replace(/\s+$/, ''),
+            R = text.slice(ne).replace(/^\s+/, '');
+          text = L + (L && R ? ' ' : '') + R;
+          const an = rerender(null);
+          emit(an);
+          if (validated) setErrLine(an);
+        }
+
+        ce.addEventListener('input', onInput);
+        ce.addEventListener('keydown', (e) => {
+          if (sug && e.key === 'ArrowDown') {
+            e.preventDefault();
+            moveSel(1);
+            return;
+          }
+          if (sug && e.key === 'ArrowUp') {
+            e.preventDefault();
+            moveSel(-1);
+            return;
+          }
+          if (sug && (e.key === 'Enter' || e.key === 'Tab')) {
+            e.preventDefault();
+            if (sugItems[sugSel]) pick(sugItems[sugSel]._it);
+            return;
+          }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            return;
+          } // stay one logical line
+          if (e.key === 'Escape') {
+            closeSug();
+            return;
+          }
+        });
+        ce.addEventListener('keyup', (e) => {
+          if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) showSuggest();
+        });
+        ce.addEventListener('mouseup', () => showSuggest());
+        ce.addEventListener('focus', () => {
+          validated = false;
+          ce.classList.remove('validated');
+          if (errEl) errEl.textContent = '';
+        });
+        ce.addEventListener('blur', () => {
+          validated = true;
+          ce.classList.add('validated');
+          setErrLine(rerender(null));
+          setTimeout(closeSug, 150);
+        });
+        ce.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          document.execCommand('insertText', false, t.replace(/\s+/g, ' '));
+        });
+
+        ce.classList.add('empty');
+        return {
+          ce,
+          getAnalysis: analyze,
+          setEnabled(on) {
+            ce.classList.toggle('disabled', !on);
+            ce.setAttribute('contenteditable', on ? 'true' : 'false');
+          },
+          reset() {
+            text = '';
+            ce.innerHTML = '';
+            ce.classList.add('empty');
+          },
+          focus() {
+            ce.focus();
+          },
+        };
+      }
+
+      /* =========================================================================
+       * Assembly
+       * ========================================================================= */
+      let whereEd, selectEd, groupByEd, havingEd, orderByEd;
+      let A = {};
+
+      function refresh() {
+        if (!whereEd || !selectEd || !groupByEd || !havingEd || !orderByEd) return;
+        A.where = whereEd.getAnalysis();
+        A.select = selectEd.getAnalysis();
+        A.groupby = groupByEd.getAnalysis();
+        A.having = havingEd.getAnalysis();
+        A.orderby = orderByEd.getAnalysis();
+
+        const payload = {};
+        const sel = serializeList(A.select, 'select');
+        if (sel.length) payload.select = sel;
+        let w = toWhere(A.where.tree);
+        if (w && !w.condition) w = { condition: 'and', not: false, rules: [w] };
+        if (w) payload.where = w;
+        const gb = serializeList(A.groupby, 'groupby');
+        if (gb.length) payload.groupBy = gb;
+        const hasGB = gb.length > 0;
+        const h = toHaving(A.having.tree);
+        if (h && hasGB) payload.having = h;
+        const ob = serializeList(A.orderby, 'orderby');
+        if (ob.length) payload.orderBy = ob;
+        document.getElementById('out').textContent = JSON.stringify(payload, null, 2);
+
+        const gbSet = new Set(gb);
+        const missing = A.select.items
+          .filter(
+            (i) => i.valid && (i.node.t === 'col' || (i.node.t === 'fn' && i.node.fn && i.node.fn.kind === 'scalar')),
+          )
+          .map((i) => (i.node.t === 'col' ? i.node.name : null))
+          .filter((n) => n && !gbSet.has(n));
+        const warn = document.getElementById('groupby-warn');
+        if (gbSet.size && missing.length) {
+          warn.hidden = false;
+          warn.innerHTML =
+            'Non-aggregate select column(s) not in group-by: <code>' + missing.join('</code> <code>') + '</code>';
+        } else warn.hidden = true;
+
+        havingEd.setEnabled(hasGB);
+        document.getElementById('having-note').textContent = hasGB
+          ? ''
+          : 'Disabled — add a group-by first (having without group_by is a validation error).';
+      }
+
+      /* =========================================================================
+       * Embedded data + optional live Connect
+       * ========================================================================= */
+      const EMBEDDED_OPERATORS = [
+        {
+          type: 'any',
+          operators: [
+            'equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'not_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+            'starts_with',
+            'ends_with',
+            'contains',
+            'like',
+            'regexp',
+            'any_match',
+            'all_match',
+            'has_key',
+            'has_value',
+            'is_in_cidr',
+            'is_not_in_cidr',
+          ],
+        },
+        { type: 'array', operators: ['contains', 'any_match', 'all_match'] },
+        { type: 'binary', operators: [] },
+        { type: 'boolean', operators: ['equal', 'not_equal', 'is_empty', 'is_not_empty'] },
+        {
+          type: 'date',
+          operators: [
+            'equal',
+            'not_equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+          ],
+        },
+        {
+          type: 'enum',
+          operators: [
+            'equal',
+            'not_equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+          ],
+        },
+        {
+          type: 'ip',
+          operators: [
+            'equal',
+            'not_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+            'is_in_cidr',
+            'is_not_in_cidr',
+          ],
+        },
+        { type: 'map', operators: ['contains', 'has_key', 'has_value'] },
+        {
+          type: 'number',
+          operators: [
+            'equal',
+            'not_equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'is_in',
+            'is_not_in',
+          ],
+        },
+        {
+          type: 'string',
+          operators: [
+            'equal',
+            'not_equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+            'starts_with',
+            'ends_with',
+            'contains',
+            'like',
+            'regexp',
+          ],
+        },
+        { type: 'struct', operators: ['contains'] },
+        {
+          type: 'timestamp',
+          operators: [
+            'equal',
+            'not_equal',
+            'greater_than',
+            'greater_than_or_equal',
+            'less_than',
+            'less_than_or_equal',
+            'is_in',
+            'is_not_in',
+            'is_empty',
+            'is_not_empty',
+          ],
+        },
+        { type: 'union', operators: ['contains'] },
+        { type: 'uuid', operators: ['equal', 'not_equal', 'is_in', 'is_not_in', 'is_empty', 'is_not_empty'] },
+      ];
+
+      const EMBEDDED_FUNCTIONS = [
+        {
+          name: 'lower',
+          kind: 'scalar',
+          parameters: [{ name: 'term', types: 'string', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'string' },
+          description: 'Lower-case a string.',
+        },
+        {
+          name: 'upper',
+          kind: 'scalar',
+          parameters: [{ name: 'term', types: 'string', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'string' },
+          description: 'Upper-case a string.',
+        },
+        {
+          name: 'length',
+          kind: 'scalar',
+          parameters: [{ name: 'term', types: 'string', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'String length.',
+        },
+        {
+          name: 'floor',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'int' },
+          description: 'Round down to nearest integer.',
+        },
+        {
+          name: 'ceil',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'int' },
+          description: 'Round up to nearest integer.',
+        },
+        {
+          name: 'round',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+            { name: 'precision', types: 'literal_int', minRepeat: 0, maxRepeat: 1 },
+          ],
+          output: { types: 'any' },
+          description: 'Round to optional decimal places.',
+        },
+        {
+          name: 'abs',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Absolute value.',
+        },
+        {
+          name: 'coalesce',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'default_values',
+              types: [
+                'decimal',
+                'double',
+                'float',
+                'tinyint',
+                'int',
+                'long',
+                'smallint',
+                'string',
+                'literal_string',
+                'date',
+                'timestamp',
+                'bool',
+                'literal_int',
+              ],
+              minRepeat: 2,
+              maxRepeat: null,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'First non-null value.',
+        },
+        {
+          name: 'concat',
+          kind: 'scalar',
+          parameters: [
+            { name: 'terms', types: 'string', minRepeat: 1, maxRepeat: 1 },
+            { name: 'value', types: 'string', minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'string' },
+          description: 'Concatenate strings.',
+        },
+        {
+          name: 'replace',
+          kind: 'scalar',
+          parameters: [
+            { name: 'term', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'find_string', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'replace_with', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'string' },
+          description: 'Replace substring.',
+        },
+        {
+          name: 'regexplike',
+          kind: 'scalar',
+          parameters: [
+            { name: 'term', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'pattern', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'modifiers', types: ['string', 'literal_string'], minRepeat: 0, maxRepeat: 1 },
+          ],
+          output: { types: 'bool' },
+          description: 'Regex match test.',
+        },
+        {
+          name: 'datediff',
+          kind: 'scalar',
+          parameters: [
+            { name: 'start_date', types: ['date', 'timestamp'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'end_date', types: ['date', 'timestamp'], minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'int' },
+          description: 'Days between two timestamps.',
+        },
+        {
+          name: 'date',
+          kind: 'scalar',
+          parameters: [{ name: 'term', types: ['string', 'timestamp', 'date'], minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'date' },
+          description: 'Convert to a date.',
+        },
+        {
+          name: 'hour',
+          kind: 'scalar',
+          parameters: [{ name: 'term', types: ['date', 'timestamp'], minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'Hour of a timestamp.',
+        },
+        {
+          name: 'cast',
+          kind: 'scalar',
+          parameters: [
+            { name: 'term', types: ['any', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'as_type', types: 'literal_string', minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'any' },
+          description: 'Cast to a type.',
+        },
+        {
+          name: 'greatest',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'terms',
+              types: [
+                'decimal',
+                'double',
+                'float',
+                'tinyint',
+                'int',
+                'long',
+                'smallint',
+                'string',
+                'literal_string',
+                'date',
+                'timestamp',
+                'bool',
+                'literal_int',
+              ],
+              minRepeat: 2,
+              maxRepeat: null,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Row-wise maximum.',
+        },
+        {
+          name: 'least',
+          kind: 'scalar',
+          parameters: [
+            {
+              name: 'terms',
+              types: [
+                'decimal',
+                'double',
+                'float',
+                'tinyint',
+                'int',
+                'long',
+                'smallint',
+                'string',
+                'literal_string',
+                'date',
+                'timestamp',
+                'bool',
+                'literal_int',
+              ],
+              minRepeat: 2,
+              maxRepeat: null,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Row-wise minimum.',
+        },
+        {
+          name: 'ipincidr',
+          kind: 'scalar',
+          parameters: [
+            { name: 'term', types: 'string', minRepeat: 1, maxRepeat: 1 },
+            { name: 'cidr', types: 'literal_string', minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'bool' },
+          description: 'Is the IP inside the CIDR range.',
+        },
+        {
+          name: 'left',
+          kind: 'scalar',
+          parameters: [
+            { name: 'term', types: ['string', 'literal_string'], minRepeat: 1, maxRepeat: 1 },
+            { name: 'length', types: ['int', 'literal_int'], minRepeat: 1, maxRepeat: 1 },
+          ],
+          output: { types: 'string' },
+          description: 'First n characters.',
+        },
+        {
+          name: 'count',
+          kind: 'aggregate',
+          parameters: [{ name: 'term', types: ['any', 'literal_string'], minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'Number of input rows. count(*) -> bigint',
+        },
+        {
+          name: 'sum',
+          kind: 'aggregate',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Sum.',
+        },
+        {
+          name: 'avg',
+          kind: 'aggregate',
+          parameters: [
+            {
+              name: 'term',
+              types: ['decimal', 'double', 'float', 'tinyint', 'int', 'long', 'smallint'],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'float' },
+          description: 'Average.',
+        },
+        {
+          name: 'min',
+          kind: 'aggregate',
+          parameters: [
+            {
+              name: 'term',
+              types: [
+                'decimal',
+                'double',
+                'float',
+                'tinyint',
+                'int',
+                'long',
+                'smallint',
+                'string',
+                'literal_string',
+                'date',
+                'timestamp',
+                'bool',
+                'literal_int',
+              ],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Minimum.',
+        },
+        {
+          name: 'max',
+          kind: 'aggregate',
+          parameters: [
+            {
+              name: 'term',
+              types: [
+                'decimal',
+                'double',
+                'float',
+                'tinyint',
+                'int',
+                'long',
+                'smallint',
+                'string',
+                'literal_string',
+                'date',
+                'timestamp',
+                'bool',
+                'literal_int',
+              ],
+              minRepeat: 1,
+              maxRepeat: 1,
+            },
+          ],
+          output: { types: 'any' },
+          description: 'Maximum.',
+        },
+        {
+          name: 'countif',
+          kind: 'aggregate',
+          parameters: [{ name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'Count rows where the argument is true.',
+        },
+        {
+          name: 'approxdistinct',
+          kind: 'aggregate',
+          parameters: [{ name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'Approximate distinct count.',
+        },
+        {
+          name: 'arrayagg',
+          kind: 'aggregate',
+          parameters: [{ name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'array' },
+          description: 'Aggregate values into an array.',
+        },
+        {
+          name: 'anyvalue',
+          kind: 'aggregate',
+          parameters: [{ name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'any' },
+          description: 'An arbitrary value from the group.',
+        },
+        {
+          name: 'rownumber',
+          kind: 'analytic',
+          parameters: [],
+          output: { types: 'int' },
+          description: 'Row number within the window.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'rank',
+          kind: 'analytic',
+          parameters: [],
+          output: { types: 'int' },
+          description: 'Rank with gaps.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'denserank',
+          kind: 'analytic',
+          parameters: [],
+          output: { types: 'int' },
+          description: 'Rank without gaps.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'lag',
+          kind: 'analytic',
+          parameters: [
+            { name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 },
+            { name: 'offset', types: 'literal_int', minRepeat: 0, maxRepeat: 1 },
+          ],
+          output: { types: 'any' },
+          description: 'Value from a previous row.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'lead',
+          kind: 'analytic',
+          parameters: [
+            { name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 },
+            { name: 'offset', types: 'literal_int', minRepeat: 0, maxRepeat: 1 },
+          ],
+          output: { types: 'any' },
+          description: 'Value from a following row.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'ntile',
+          kind: 'analytic',
+          parameters: [{ name: 'term', types: 'literal_int', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'int' },
+          description: 'Distribute rows into n buckets.',
+          isAnalytic: true,
+          requiresOrderBy: true,
+        },
+        {
+          name: 'firstvalue',
+          kind: 'analytic',
+          parameters: [{ name: 'term', types: 'any', minRepeat: 1, maxRepeat: 1 }],
+          output: { types: 'any' },
+          description: 'First value in the window.',
+          isAnalytic: true,
+          supportsFrame: true,
+        },
+      ];
+
+      const EMBEDDED_FIELDS = [
+        { field: '@timestamp', label: 'Timestamp', type: { type: 'timestamp' }, hive_type: 'timestamp' },
+        { field: 'event.action', label: 'Event Action', type: { type: 'string' }, hive_type: 'string' },
+        { field: 'event.category', label: 'Event Category', type: { type: 'string' }, hive_type: 'string' },
+        { field: 'event.outcome', label: 'Event Outcome', type: { type: 'string' }, hive_type: 'string' },
+        { field: 'event.severity', label: 'Severity', type: { type: 'number' }, hive_type: 'int' },
+        { field: 'duration_ms', label: 'Duration (ms)', type: { type: 'number' }, hive_type: 'double' },
+        { field: 'http.response.bytes', label: 'Response Bytes', type: { type: 'number' }, hive_type: 'long' },
+        { field: 'source.ip', label: 'Source IP', type: { type: 'ip' }, hive_type: 'ip' },
+        { field: 'destination.ip', label: 'Destination IP', type: { type: 'ip' }, hive_type: 'ip' },
+        { field: 'message', label: 'Message', type: { type: 'string' }, hive_type: 'string' },
+        { field: 'is_internal', label: 'Internal', type: { type: 'boolean' }, hive_type: 'boolean' },
+        { field: 'user.id', label: 'User ID', type: { type: 'uuid' }, hive_type: 'uuid' },
+        { field: 'event.created', label: 'Created Date', type: { type: 'date' }, hive_type: 'date' },
+        {
+          field: 'labels',
+          label: 'Labels',
+          type: { type: 'map', key_type: { type: 'string' }, value_type: { type: 'string' } },
+          hive_type: 'map<string,string>',
+        },
+        {
+          field: 'metrics',
+          label: 'Metrics',
+          type: { type: 'map', key_type: { type: 'string' }, value_type: { type: 'number' } },
+          hive_type: 'map<string,double>',
+        },
+        {
+          field: 'tags',
+          label: 'Tags',
+          type: { type: 'array', element_type: { type: 'string' } },
+          hive_type: 'array<string>',
+        },
+        {
+          field: 'geo',
+          label: 'Geo',
+          type: {
+            type: 'struct',
+            fields: [
+              { name: 'country', label: 'Country', type: { type: 'string' } },
+              { name: 'city', label: 'City', type: { type: 'string' } },
+              { name: 'lat', label: 'Lat', type: { type: 'number' } },
+            ],
+          },
+          hive_type: 'struct<country:string,city:string,lat:double>',
+        },
+        {
+          field: 'attributes',
+          label: 'Attributes',
+          type: {
+            type: 'union',
+            variants: [
+              { tag: 'text', label: 'Text', type: { type: 'string' } },
+              { tag: 'count', label: 'Count', type: { type: 'number' } },
+            ],
+          },
+          hive_type: 'union<text:string,count:int>',
+        },
+        {
+          field: 'raw_payload',
+          label: 'Raw Payload (binary — no operators)',
+          type: { type: 'binary' },
+          hive_type: 'binary',
+        },
+      ];
+
+      function loadCatalog(fields, functions, operators) {
+        Catalog.setFields(fields);
+        Catalog.setFunctions(functions);
+        Catalog.setOperators(operators);
+      }
+      function boot() {
+        whereEd = QueryEditor('where-ed', 'where', refresh);
+        selectEd = QueryEditor('select-ed', 'select', refresh);
+        groupByEd = QueryEditor('groupby-ed', 'groupby', refresh);
+        havingEd = QueryEditor('having-ed', 'having', refresh);
+        orderByEd = QueryEditor('orderby-ed', 'orderby', refresh);
+        refresh();
+      }
+
+      document.getElementById('copy-json').addEventListener('click', () => {
+        navigator.clipboard && navigator.clipboard.writeText(document.getElementById('out').textContent);
+      });
+      document.getElementById('cx-go').addEventListener('click', async () => {
+        const base = document.getElementById('cx-base').value.replace(/\/$/, '');
+        const table = document.getElementById('cx-table').value.trim();
+        const token = document.getElementById('cx-token').value.trim();
+        if (!base || !table) {
+          alert('base URL and table id required');
+          return;
+        }
+        const h = token ? { Authorization: 'Bearer ' + token } : {};
+        try {
+          const [fs, fn, op] = await Promise.all([
+            fetch(base + '/v1/tables/' + table + '/filter-schema', { headers: h }).then((r) => r.json()),
+            fetch(base + '/v1/functions', { headers: h }).then((r) => r.json()),
+            fetch(base + '/v1/operators', { headers: h }).then((r) => r.json()),
+          ]);
+          loadCatalog(fs, fn, op);
+          document.getElementById('src').textContent = 'live · ' + table;
+          ['where', 'select', 'groupby', 'having', 'orderby'].forEach((k) => {
+            const e = document.getElementById(k + '-ed');
+            e.innerHTML = '';
+            e.classList.add('empty');
+          });
+          boot();
+        } catch (e) {
+          alert('Connect failed: ' + e.message + '\n(CORS must allow the request)');
+        }
+      });
+
+      loadCatalog(EMBEDDED_FIELDS, EMBEDDED_FUNCTIONS, EMBEDDED_OPERATORS);
+      boot();
+    </script>
+  </body>
+</html>
