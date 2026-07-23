@@ -1,4 +1,4 @@
-import { OperatorCatalog } from './query-bar';
+import { OperatorCatalog } from './query-js';
 
 /**
  * Sample operator catalog (`GET /v1/operators`) for exercising the v2 editor —

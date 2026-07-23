@@ -14,6 +14,7 @@ import { CatalogStore } from '../../services';
 import {
   analyzeProfile,
   chipInfo,
+  isBoolProfile,
   profileErrors,
   suggestFor,
   tokensToHtml,
@@ -74,6 +75,12 @@ export class QueryEditor {
   private pendingCaret: number | null = null;
   /** Re-open suggestions once the pending re-render has landed (after `pick`). */
   private reopenSuggest = false;
+
+  // --- hover-delete state -----------------------------------------------------
+  /** Floating delete button: viewport position + the chip's source span. */
+  readonly delBtn = signal<{ left: number; top: number; s: number; e: number } | null>(null);
+  /** True while the pointer is over the delete button (keeps it from hiding). */
+  private overDel = false;
 
   constructor() {
     // Keep the contenteditable's HTML in sync with the analysis, preserving the
@@ -165,6 +172,74 @@ export class QueryEditor {
     const text = this.getText(ce);
     this.pendingCaret = caret + pasted.length;
     this.value.set(text.slice(0, caret) + pasted + text.slice(caret));
+  }
+
+  // --- hover-delete -----------------------------------------------------------
+
+  /** Reveal the floating × over the hovered chip (glow is pure CSS). */
+  onMouseover(e: MouseEvent): void {
+    const ce = this.ceRef().nativeElement;
+    const chip = (e.target as HTMLElement | null)?.closest?.('.chip') as HTMLElement | null;
+    if (!chip || !ce.contains(chip)) return;
+    const r = chip.getBoundingClientRect();
+    this.delBtn.set({
+      left: r.right - 8,
+      top: r.top - 9,
+      s: Number(chip.dataset['s']),
+      e: Number(chip.dataset['e']),
+    });
+  }
+
+  /** Hide the button once the pointer leaves the editor, unless it moved onto it. */
+  onCeMouseleave(): void {
+    setTimeout(() => {
+      if (!this.overDel) this.delBtn.set(null);
+    }, 60);
+  }
+
+  onDelEnter(): void {
+    this.overDel = true;
+  }
+
+  onDelLeave(): void {
+    this.overDel = false;
+    this.delBtn.set(null);
+  }
+
+  /** Delete the hovered chip's span, healing the surrounding connective/comma. */
+  deleteChip(): void {
+    const info = this.delBtn();
+    if (!info) return;
+    this.overDel = false;
+    this.delBtn.set(null);
+
+    const ce = this.ceRef().nativeElement;
+    const text = this.getText(ce);
+    let ns = info.s;
+    let ne = info.e;
+    const before = text.slice(0, info.s);
+    const after = text.slice(info.e);
+    if (isBoolProfile(this.profile())) {
+      const am = /^\s*(?:and|or)\b/i.exec(after);
+      if (am) ne = info.e + am[0].length;
+      else {
+        const bm = /\b(?:and|or)\s*$/i.exec(before);
+        if (bm) ns = bm.index;
+      }
+    } else {
+      const am = /^\s*,/.exec(after);
+      if (am) ne = info.e + am[0].length;
+      else {
+        const bm = /,\s*$/.exec(before);
+        if (bm) ns = bm.index;
+      }
+    }
+    const left = text.slice(0, ns).replace(/\s+$/, '');
+    const right = text.slice(ne).replace(/^\s+/, '');
+    const next = left + (left && right ? ' ' : '') + right;
+    const focused = typeof document !== 'undefined' && document.activeElement === ce;
+    this.pendingCaret = focused ? left.length : null;
+    this.value.set(next);
   }
 
   // --- suggestions ------------------------------------------------------------

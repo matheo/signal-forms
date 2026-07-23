@@ -1,8 +1,7 @@
 import { Component, computed, effect, inject, input, model, output, untracked } from '@angular/core';
+import { FilterDefinition, FunctionDefinition } from '../../../query-bar';
 import {
   CatalogSource,
-  FilterDefinition,
-  FunctionDefinition,
   OperatorCatalog,
   QueryDefinition,
 } from '../../models';

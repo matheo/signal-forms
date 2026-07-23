@@ -1,5 +1,4 @@
-import { FilterDefinition } from './filters';
-import { FunctionDefinition } from './functions';
+import { FilterDefinition, FunctionDefinition } from '../../query-bar';
 import { WireOperator } from './query-definition';
 
 /**

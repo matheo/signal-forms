@@ -2,18 +2,26 @@
   display: block;
   position: relative;
 
-  // Theme-agnostic palette: neutrals derive from currentColor; accents are fixed
-  // hues that read on both light and dark Material surfaces.
+  // Neutral chrome: editor frame, suggestion dropdown, error line, delete
+  // button. Neutrals derive from currentColor; accent/danger use Material system
+  // tokens with fixed-hue fallbacks so the editor still reads in the harness.
   --qe-border: color-mix(in srgb, currentColor 20%, transparent);
   --qe-muted: color-mix(in srgb, currentColor 55%, transparent);
   --qe-soft: color-mix(in srgb, currentColor 8%, transparent);
-  --qe-accent: #4c8dff;
-  --qe-accent-soft: color-mix(in srgb, #4c8dff 22%, transparent);
-  --qe-danger: #e0575b;
-  --qe-danger-soft: color-mix(in srgb, #e0575b 20%, transparent);
-  --qe-group: #b98bdc;
-  --qe-string: #4caf7d;
-  --qe-number: #d9915a;
+  --qe-panel: var(--mat-sys-surface-container-high, Canvas);
+  --qe-accent: var(--mat-sys-primary, #4c8dff);
+  --qe-accent-soft: color-mix(in srgb, var(--qe-accent) 22%, transparent);
+  --qe-danger: var(--mat-sys-error, #e0575b);
+  --qe-danger-soft: color-mix(in srgb, var(--qe-danger) 20%, transparent);
+
+  // Syntax palette — matched to the QbVisual chips so both modes read alike.
+  --identifier-color: #93c5fd;
+  --operator-color: #ca8a04;
+  --op-color: #f9a8d4;
+  --not-color: #fcd34d;
+  --value-color: #86efac;
+  --qe-chip-bg: rgba(148, 163, 184, 0.14);
+  --qe-chip-bg-hover: rgba(148, 163, 184, 0.24);
 }
 
 /* ---- the freeform editor ---- */
@@ -54,23 +62,54 @@
 /* inline chip = a styled run of the real text (still editable in place) */
 .chip {
   margin: 0 1px;
-  padding: 1px 5px;
-  border: 1px dashed var(--qe-group);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--qe-group) 10%, transparent);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  background: var(--qe-chip-bg);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
 /* validity styling applies only after focus is lost (.validated gate) */
 .qe.validated .chip.invalid {
-  border-style: solid;
   border-color: var(--qe-danger);
-  background: color-mix(in srgb, var(--qe-danger) 10%, transparent);
+  background: color-mix(in srgb, var(--qe-danger) 12%, transparent);
+}
+
+/* hover a chip: subtle fill + floating × delete (fixed overlay, no re-layout) */
+.chip:hover {
+  background: var(--qe-chip-bg-hover);
+}
+.qe.validated .chip.invalid:hover {
+  background: color-mix(in srgb, var(--qe-danger) 20%, transparent);
+}
+
+.chip-del {
+  position: fixed;
+  z-index: 80;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  line-height: 15px;
+  text-align: center;
+  border: 1px solid var(--qe-border);
+  border-radius: 50%;
+  background: var(--qe-panel);
+  color: var(--qe-muted);
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+
+  &:hover {
+    border-color: var(--qe-danger);
+    color: var(--qe-danger);
+    background: color-mix(in srgb, var(--qe-danger) 12%, var(--qe-panel));
+  }
 }
 
 /* ---- token roles ---- */
 .t-field {
+  color: var(--identifier-color);
   font-weight: 600;
 }
 .qe.validated .t-field.unknown {
@@ -78,33 +117,28 @@
   text-decoration: underline wavy var(--qe-danger);
 }
 .t-func {
-  color: var(--qe-accent);
+  color: var(--identifier-color);
   font-weight: 700;
 }
 .t-op {
-  color: var(--qe-accent);
+  color: var(--operator-color);
   font-weight: 600;
 }
-.t-str {
-  color: var(--qe-string);
-}
-.t-num {
-  color: var(--qe-number);
-}
+.t-str,
+.t-num,
 .t-bare,
 .t-val {
-  color: inherit;
+  color: var(--value-color);
 }
 .t-kw {
-  color: var(--qe-group);
-  font-weight: 800;
+  color: var(--op-color);
+  font-weight: 700;
 } /* AND / OR / NOT */
 .t-paren {
-  color: var(--qe-group);
-  font-weight: 800;
+  opacity: 0.7;
 }
 .t-comma {
-  color: var(--qe-muted);
+  opacity: 0.7;
 }
 .t-bad {
   color: var(--qe-muted);
@@ -121,9 +155,9 @@
   font-style: italic;
 }
 .t-dir {
-  color: var(--qe-accent);
+  color: var(--op-color);
   font-weight: 700;
-}
+} /* asc / desc */
 
 /* ---- blur-gated error line ---- */
 .qe-err {

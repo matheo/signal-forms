@@ -1,5 +1,5 @@
+import { FunctionDefinition } from '../../query-bar';
 import { EditorToken } from './editor-token';
-import { FunctionDefinition } from './functions';
 import { QueryValue, WireOperator } from './query-definition';
 
 /**

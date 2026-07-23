@@ -17,10 +17,28 @@
   (keydown)="onKeydown($event)"
   (keyup)="onKeyup($event)"
   (mouseup)="onMouseup()"
+  (mouseover)="onMouseover($event)"
+  (mouseleave)="onCeMouseleave()"
   (focus)="onFocus()"
   (blur)="onBlur()"
   (paste)="onPaste($event)"
 ></div>
+
+@if (delBtn(); as del) {
+  <button
+    type="button"
+    class="chip-del"
+    aria-label="Delete"
+    [style.left.px]="del.left"
+    [style.top.px]="del.top"
+    (mouseenter)="onDelEnter()"
+    (mouseleave)="onDelLeave()"
+    (mousedown)="$event.preventDefault()"
+    (click)="deleteChip()"
+  >
+    ×
+  </button>
+}
 
 @if (errors().length) {
   <div class="qe-err">⚠ {{ errors().join('  ·  ') }}</div>

@@ -1,4 +1,5 @@
-import { FunctionDataType, GenericType } from '../models';
+import { FunctionDataType } from '../../query-bar';
+import { GenericType } from '../models';
 
 /**
  * Type-name bridging (see `filter-ui-v2.md` §"Type-name bridging").

@@ -1,9 +1,8 @@
+import { FilterDefinition, FunctionDefinition } from '../../query-bar';
 import {
   BoolCaretContext,
   EditorProfile,
-  FilterDefinition,
   FnArgContext,
-  FunctionDefinition,
   Suggestion,
   SuggestionGroup,
   SuggestionResult,

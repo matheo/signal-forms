@@ -1,12 +1,8 @@
+import { ArrayFilterType, FilterDefinition, FunctionDefinition, MapFilterType, StructFilterType } from '../../query-bar';
 import {
-  ArrayFilterType,
-  FilterDefinition,
-  FunctionDefinition,
   GenericType,
-  MapFilterType,
   OperatorCatalog,
   OperatorsByType,
-  StructFilterType,
   WireOperator,
 } from '../models';
 import { toGeneric } from './type-bridge';

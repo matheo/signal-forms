@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { CatalogSource, FilterDefinition, FunctionDefinition, OperatorCatalog } from '../models';
+import { FilterDefinition, FunctionDefinition } from '../../query-bar';
+import { CatalogSource, OperatorCatalog } from '../models';
 import { CatalogIndex } from '../utils';
 
 /**
